@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nanoagent-word-ladder"
+version = "0.1.0"
+description = "Find shortest word ladders, checked by a deterministic verifier: a NanoAgent plugin"
+requires-python = ">=3.12"
+dependencies = ["mcp>=1.27,<2", "slimconfig"]
+
+[project.optional-dependencies]
+dev = ["pytest>=9.2,<10", "ruff>=0.17.3,<0.18"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.uv.sources]
+slimconfig = { git = "https://github.com/zeyuyang8/slimconfig", branch = "master" }
+
+[tool.ruff]
+line-length = 120
+
+[tool.pytest.ini_options]
+# contract.py and verifier/ live at the plugin root.
+pythonpath = ["."]

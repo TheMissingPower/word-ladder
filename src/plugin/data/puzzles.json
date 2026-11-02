@@ -1,0 +1,122 @@
+[
+  {
+    "start": "jaws",
+    "end": "yaws",
+    "solvable": true,
+    "optimal_length": 2
+  },
+  {
+    "start": "vamp",
+    "end": "lame",
+    "solvable": true,
+    "optimal_length": 3
+  },
+  {
+    "start": "mole",
+    "end": "tory",
+    "solvable": true,
+    "optimal_length": 4
+  },
+  {
+    "start": "sods",
+    "end": "qoph",
+    "solvable": true,
+    "optimal_length": 4
+  },
+  {
+    "start": "duke",
+    "end": "wake",
+    "solvable": true,
+    "optimal_length": 4
+  },
+  {
+    "start": "gley",
+    "end": "bras",
+    "solvable": true,
+    "optimal_length": 5
+  },
+  {
+    "start": "door",
+    "end": "dubs",
+    "solvable": true,
+    "optimal_length": 5
+  },
+  {
+    "start": "carp",
+    "end": "guls",
+    "solvable": true,
+    "optimal_length": 5
+  },
+  {
+    "start": "fins",
+    "end": "obes",
+    "solvable": true,
+    "optimal_length": 6
+  },
+  {
+    "start": "clam",
+    "end": "kefs",
+    "solvable": true,
+    "optimal_length": 6
+  },
+  {
+    "start": "aper",
+    "end": "revs",
+    "solvable": true,
+    "optimal_length": 6
+  },
+  {
+    "start": "baby",
+    "end": "huff",
+    "solvable": true,
+    "optimal_length": 7
+  },
+  {
+    "start": "blaw",
+    "end": "dugs",
+    "solvable": true,
+    "optimal_length": 7
+  },
+  {
+    "start": "bads",
+    "end": "nevi",
+    "solvable": true,
+    "optimal_length": 7
+  },
+  {
+    "start": "wand",
+    "end": "trow",
+    "solvable": true,
+    "optimal_length": 8
+  },
+  {
+    "start": "acre",
+    "end": "gips",
+    "solvable": true,
+    "optimal_length": 8
+  },
+  {
+    "start": "ruth",
+    "end": "club",
+    "solvable": true,
+    "optimal_length": 8
+  },
+  {
+    "start": "kilt",
+    "end": "djin",
+    "solvable": false,
+    "optimal_length": null
+  },
+  {
+    "start": "huic",
+    "end": "tale",
+    "solvable": false,
+    "optimal_length": null
+  },
+  {
+    "start": "umbo",
+    "end": "hewn",
+    "solvable": false,
+    "optimal_length": null
+  }
+]
