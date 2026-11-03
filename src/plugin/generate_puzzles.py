@@ -17,8 +17,9 @@ from plugin.dictionary import WORDS, distances, neighbors
 from plugin.puzzles import PUZZLES
 
 SEED = 480
-# Optimal lengths (words, both ends included) of the solvable puzzles: two short ones, then three each of 4 to 8.
-LENGTHS = [2, 3] + [length for length in range(4, 9) for _ in range(3)]
+# Optimal lengths (words, both ends included) of the solvable puzzles: all 3, one step through a middle word, since
+# longer ladders took the agent too much thinking.
+LENGTHS = [3] * 17
 VERIFIER_WORDS = Path(__file__).parents[2] / "verifier" / "words.py"
 
 

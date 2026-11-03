@@ -8,8 +8,8 @@ from contract import IsWordInput, IsWordOutput, LadderInput, LadderOutput, Puzzl
 from plugin.puzzles import pin_puzzle
 from verifier.words import WORDS
 
-# duke -> wake: two shortest ladders of 4 words (duke cuke cake wake, duke juke jake wake).
-SOLVABLE = {"start": "duke", "end": "wake"}
+# sods -> rows: two shortest ladders of 3 words (sods rods rows, sods sows rows).
+SOLVABLE = {"start": "sods", "end": "rows"}
 # kilt -> djin: djin has no neighbors in the dictionary.
 UNSOLVABLE = {"start": "kilt", "end": "djin"}
 
@@ -26,15 +26,11 @@ def ladder(*words: str) -> dict:
 
 
 @pytest.mark.parametrize(
-    "words", [("duke", "cuke", "cake", "wake"), ("duke", "juke", "jake", "wake")], ids=["one", "another"]
+    "words", [("sods", "rods", "rows"), ("sods", "sows", "rows")], ids=["one", "another"]
 )
 def test_passes_any_shortest_ladder(words, tmp_path) -> None:
     result = verdict(SOLVABLE, ladder(*words), tmp_path)
     assert result["valid"] is True and result["score"] == 1.0
-
-
-def test_passes_a_single_step_puzzle(tmp_path) -> None:
-    assert verdict({"start": "jaws", "end": "yaws"}, ladder("jaws", "yaws"), tmp_path)["valid"] is True
 
 
 def test_passes_an_unsolvable_puzzle_reported_as_unsolvable(tmp_path) -> None:
@@ -44,18 +40,18 @@ def test_passes_an_unsolvable_puzzle_reported_as_unsolvable(tmp_path) -> None:
 @pytest.mark.parametrize(
     ("puzzle", "output", "reason"),
     [
-        (SOLVABLE, ladder("duke", "juke", "jake", "cake", "wake"), "not shortest"),
-        (SOLVABLE, ladder("duke", "cake", "wake"), "changes 2 letters"),
-        (SOLVABLE, ladder("duke", "cuke", "zake", "wake"), "'zake' is not in the dictionary"),
-        (SOLVABLE, ladder("juke", "jake", "wake"), "starts with 'juke'"),
-        (SOLVABLE, ladder("duke", "cuke", "cake"), "ends with 'cake'"),
-        (SOLVABLE, ladder("duke", "cuke", "duke", "cuke", "cake", "wake"), "'duke' repeats"),
-        (SOLVABLE, ladder("duke", "cuke", "cuke", "cake", "wake"), "changes 0 letters"),
-        (SOLVABLE, ladder("duke", "CUKE", "cake", "wake"), "not lowercase ASCII letters"),
-        (SOLVABLE, ladder("duke", "cukes", "cake", "wake"), "does not have 4 letters"),
-        (SOLVABLE, ladder("duke", "cuké", "cake", "wake"), "not lowercase ASCII letters"),
+        (SOLVABLE, ladder("sods", "sobs", "robs", "rows"), "not shortest"),
+        (SOLVABLE, ladder("sods", "rows"), "changes 2 letters"),
+        (SOLVABLE, ladder("sods", "zods", "rows"), "'zods' is not in the dictionary"),
+        (SOLVABLE, ladder("rods", "rows"), "starts with 'rods'"),
+        (SOLVABLE, ladder("sods", "rods"), "ends with 'rods'"),
+        (SOLVABLE, ladder("sods", "rods", "sods", "rods", "rows"), "'sods' repeats"),
+        (SOLVABLE, ladder("sods", "rods", "rods", "rows"), "changes 0 letters"),
+        (SOLVABLE, ladder("sods", "RODS", "rows"), "not lowercase ASCII letters"),
+        (SOLVABLE, ladder("sods", "rodss", "rows"), "does not have 4 letters"),
+        (SOLVABLE, ladder("sods", "rodś", "rows"), "not lowercase ASCII letters"),
         (SOLVABLE, {"solvable": False, "ladder": []}, "says none does"),
-        (SOLVABLE, {"solvable": False, "ladder": ["duke", "cuke", "cake", "wake"]}, "says none does"),
+        (SOLVABLE, {"solvable": False, "ladder": ["sods", "rods", "rows"]}, "says none does"),
         (SOLVABLE, ladder(), "ladder is empty"),
         (UNSOLVABLE, ladder("kilt", "djin"), "no ladder from kilt to djin exists"),
         (UNSOLVABLE, {"solvable": True, "ladder": []}, "no ladder from kilt to djin exists"),
@@ -81,7 +77,7 @@ def test_passes_an_unsolvable_puzzle_reported_as_unsolvable(tmp_path) -> None:
     ],
 )
 def test_fails_a_wrong_answer(puzzle, output, reason, tmp_path) -> None:
-    assert "zake" not in WORDS
+    assert "zods" not in WORDS
     result = verdict(puzzle, output, tmp_path)
     assert result["valid"] is False and result["score"] == 0.0
     assert reason in result["message"]
@@ -143,6 +139,6 @@ def test_refuses_a_tampered_answer_key(tmp_path) -> None:
         {**pinned, "optimal_length": 5},
         {**pinned, "solvable": False, "optimal_length": None},
         {**pinned, "solvable": False},
-        {**pinned, "end": "cake"},
+        {**pinned, "end": "rods"},
     ]:
         assert verifier.verify_output("pin_puzzle", given, build_output(tampered, PuzzleOutput), "")["valid"] is False

@@ -6,6 +6,6 @@ highlights:
   - "Every step, word and length is checked against the dictionary by plain code"
   - "Includes puzzles with no ladder, so guessing a ladder is caught"
 steps:
-  - "Ask for one of the 20 puzzles, such as a ladder from duke to wake"
+  - "Ask for one of the 20 puzzles, such as a ladder from duke to joke"
   - "The agent checks words with is_word and submits its ladder"
   - "The verifier checks the ladder against the rules and the shortest length"

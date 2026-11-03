@@ -41,7 +41,7 @@ def test_the_puzzle_mix() -> None:
     frozen = load_puzzles()
     lengths = sorted(puzzle.optimal_length for puzzle in frozen if puzzle.solvable)
     assert len(frozen) == 20 and len({(puzzle.start, puzzle.end) for puzzle in frozen}) == 20
-    assert lengths == [2, 3] + [length for length in range(4, 9) for _ in range(3)]
+    assert lengths == [3] * 17
     assert sum(not puzzle.solvable for puzzle in frozen) == 3
 
 
@@ -53,7 +53,7 @@ def test_is_word_answers_from_the_dictionary(tmp_path: Path) -> None:
 
 
 def test_pin_puzzle_pins_only_frozen_puzzles(tmp_path: Path) -> None:
-    pinned = pin_puzzle(LadderInput(start="duke", end="wake"), tmp_path)
-    assert (pinned.solvable, pinned.optimal_length) == (True, 4)
+    pinned = pin_puzzle(LadderInput(start="duke", end="joke"), tmp_path)
+    assert (pinned.solvable, pinned.optimal_length) == (True, 3)
     with pytest.raises(ValueError, match="not one of this plugin's puzzles"):
         pin_puzzle(LadderInput(start="cold", end="warm"), tmp_path)

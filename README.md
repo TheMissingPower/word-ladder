@@ -43,29 +43,30 @@ no neighbors or solver tool.
 
 ### Puzzles
 
-`src/plugin/data/puzzles.json` holds 20 puzzles. 17 have a ladder: one each of
-2 and 3 words, then three each of 4, 5, 6, 7 and 8 words. 3 have no ladder.
+`src/plugin/data/puzzles.json` holds 20 puzzles. 17 have a ladder, each of
+3 words (one middle word), since longer ladders took the agent too much
+thinking. 3 have no ladder.
 `optimal_length` counts the words in a shortest ladder, both ends included.
 
 | start | end | optimal_length |
 |---|---|---|
-| jaws | yaws | 2 |
+| jaws | vars | 3 |
 | vamp | lame | 3 |
-| mole | tory | 4 |
-| sods | qoph | 4 |
-| duke | wake | 4 |
-| gley | bras | 5 |
-| door | dubs | 5 |
-| carp | guls | 5 |
-| fins | obes | 6 |
-| clam | kefs | 6 |
-| aper | revs | 6 |
-| baby | huff | 7 |
-| blaw | dugs | 7 |
-| bads | nevi | 7 |
-| wand | trow | 8 |
-| acre | gips | 8 |
-| ruth | club | 8 |
+| mole | sone | 3 |
+| sods | rows | 3 |
+| duke | joke | 3 |
+| brin | bree | 3 |
+| ukes | obes | 3 |
+| carp | caps | 3 |
+| fins | mink | 3 |
+| clam | crab | 3 |
+| aper | ares | 3 |
+| baby | gamy | 3 |
+| blaw | bloc | 3 |
+| bads | fays | 3 |
+| wand | wave | 3 |
+| acre | alme | 3 |
+| ruth | juts | 3 |
 | kilt | djin | no ladder (`djin` has no neighbors) |
 | huic | tale | no ladder (`huic` has no neighbors) |
 | umbo | hewn | no ladder (`umbo` is in a 3-word component) |
@@ -150,7 +151,7 @@ uv run python -m plugin.generate_puzzles
 ```
 
 To use the plugin, publish it on RUSH Lab, open it, and ask its chat for one of
-the puzzles, for example "Find a word ladder from duke to wake". The result card
+the puzzles, for example "Find a word ladder from duke to joke". The result card
 shows the verifier's verdict.
 
 Publishing checks every plugin rule: push the plugin to a public GitHub

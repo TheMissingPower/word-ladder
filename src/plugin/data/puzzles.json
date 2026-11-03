@@ -1,9 +1,9 @@
 [
   {
     "start": "jaws",
-    "end": "yaws",
+    "end": "vars",
     "solvable": true,
-    "optimal_length": 2
+    "optimal_length": 3
   },
   {
     "start": "vamp",
@@ -13,93 +13,93 @@
   },
   {
     "start": "mole",
-    "end": "tory",
+    "end": "sone",
     "solvable": true,
-    "optimal_length": 4
+    "optimal_length": 3
   },
   {
     "start": "sods",
-    "end": "qoph",
+    "end": "rows",
     "solvable": true,
-    "optimal_length": 4
+    "optimal_length": 3
   },
   {
     "start": "duke",
-    "end": "wake",
+    "end": "joke",
     "solvable": true,
-    "optimal_length": 4
+    "optimal_length": 3
   },
   {
-    "start": "gley",
-    "end": "bras",
+    "start": "brin",
+    "end": "bree",
     "solvable": true,
-    "optimal_length": 5
+    "optimal_length": 3
   },
   {
-    "start": "door",
-    "end": "dubs",
+    "start": "ukes",
+    "end": "obes",
     "solvable": true,
-    "optimal_length": 5
+    "optimal_length": 3
   },
   {
     "start": "carp",
-    "end": "guls",
+    "end": "caps",
     "solvable": true,
-    "optimal_length": 5
+    "optimal_length": 3
   },
   {
     "start": "fins",
-    "end": "obes",
+    "end": "mink",
     "solvable": true,
-    "optimal_length": 6
+    "optimal_length": 3
   },
   {
     "start": "clam",
-    "end": "kefs",
+    "end": "crab",
     "solvable": true,
-    "optimal_length": 6
+    "optimal_length": 3
   },
   {
     "start": "aper",
-    "end": "revs",
+    "end": "ares",
     "solvable": true,
-    "optimal_length": 6
+    "optimal_length": 3
   },
   {
     "start": "baby",
-    "end": "huff",
+    "end": "gamy",
     "solvable": true,
-    "optimal_length": 7
+    "optimal_length": 3
   },
   {
     "start": "blaw",
-    "end": "dugs",
+    "end": "bloc",
     "solvable": true,
-    "optimal_length": 7
+    "optimal_length": 3
   },
   {
     "start": "bads",
-    "end": "nevi",
+    "end": "fays",
     "solvable": true,
-    "optimal_length": 7
+    "optimal_length": 3
   },
   {
     "start": "wand",
-    "end": "trow",
+    "end": "wave",
     "solvable": true,
-    "optimal_length": 8
+    "optimal_length": 3
   },
   {
     "start": "acre",
-    "end": "gips",
+    "end": "alme",
     "solvable": true,
-    "optimal_length": 8
+    "optimal_length": 3
   },
   {
     "start": "ruth",
-    "end": "club",
+    "end": "juts",
     "solvable": true,
-    "optimal_length": 8
+    "optimal_length": 3
   },
   {
     "start": "kilt",
