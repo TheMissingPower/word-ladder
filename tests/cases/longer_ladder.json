@@ -1,0 +1,85 @@
+{
+ "note": "The search, then a valid ladder longer than the shortest.",
+ "task": "solve-ladder",
+ "arguments": {
+  "start": "isle",
+  "end": "ells"
+ },
+ "steps": [
+  {
+   "tool": "neighbors",
+   "arguments": {
+    "words": [
+     "isle",
+     "ells"
+    ]
+   }
+  },
+  {
+   "tool": "neighbors",
+   "arguments": {
+    "words": [
+     "idle",
+     "alls",
+     "eels",
+     "elds",
+     "elks",
+     "elms",
+     "ills"
+    ]
+   }
+  },
+  {
+   "tool": "neighbors",
+   "arguments": {
+    "words": [
+     "idly",
+     "aals",
+     "ails",
+     "alas",
+     "albs",
+     "ales",
+     "ally",
+     "alms",
+     "alps",
+     "alts",
+     "awls",
+     "bels",
+     "cels",
+     "dels",
+     "eely",
+     "elmy",
+     "ends",
+     "gels",
+     "ilks",
+     "illy",
+     "mels",
+     "olds",
+     "sels",
+     "tels"
+    ]
+   }
+  },
+  {
+   "tool": "submit",
+   "arguments": {
+    "solvable": true,
+    "ladder": [
+     "isle",
+     "idle",
+     "idly",
+     "illy",
+     "ally",
+     "alls",
+     "ells"
+    ]
+   }
+  }
+ ],
+ "answer": "Submitted.",
+ "expect": {
+  "valid": false,
+  "score_max": 0.0,
+  "message_contains": "not shortest"
+ }
+}

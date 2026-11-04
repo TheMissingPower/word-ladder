@@ -10,6 +10,7 @@ from slimconfig import Output
 class Tool(Enum):
     IS_WORD = "is_word"
     PIN_PUZZLE = "pin_puzzle"
+    NEIGHBORS = "neighbors"
 
 
 class Task(Enum):
@@ -18,6 +19,8 @@ class Task(Enum):
 
 START = "The start word: 4 lowercase ASCII letters, e.g. cold"
 END = "The end word: 4 lowercase ASCII letters, e.g. warm"
+# The most words one neighbors call takes.
+MAX_NEIGHBOR_WORDS = 25
 
 
 @dataclass
@@ -47,6 +50,22 @@ class IsWordOutput(Output):
 
 
 @dataclass
+class NeighborsInput(Output):
+    words: Annotated[list[str], "1 to 25 dictionary words to expand, e.g. [\"cold\", \"warm\"]"]
+
+
+@dataclass
+class WordNeighbors(Output):
+    word: Annotated[str, "A word asked about, as given"]
+    neighbors: Annotated[list[str], "Every dictionary word one letter different from it, in alphabetical order"]
+
+
+@dataclass
+class NeighborsOutput(Output):
+    results: Annotated[list[WordNeighbors], "One entry per word asked about, in the order asked"]
+
+
+@dataclass
 class PuzzleOutput(Output):
     start: Annotated[str, START]
     end: Annotated[str, END]
@@ -57,6 +76,7 @@ class PuzzleOutput(Output):
 TOOLS = {
     Tool.IS_WORD: (IsWordInput, IsWordOutput),
     Tool.PIN_PUZZLE: (LadderInput, PuzzleOutput),
+    Tool.NEIGHBORS: (NeighborsInput, NeighborsOutput),
 }
 TASKS = {
     Task.SOLVE_LADDER: (LadderInput, LadderOutput),

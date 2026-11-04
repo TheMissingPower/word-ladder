@@ -1,11 +1,11 @@
 _ > nanoagent.plugin.v0001.ProductConfig:
 tagline: "Turn one 4-letter word into another, one letter at a time, in as few steps as possible"
-summary: "Word Ladder gives an agent a start word and an end word and asks for the shortest ladder between them, or a clear answer that none exists. The agent can only look words up in the ENABLE dictionary; code, not a model, checks every step of its answer."
+summary: "Word Ladder gives an agent a start word and an end word and asks for the shortest ladder between them, or a clear answer that none exists. The agent runs its own two-sided search, asking a neighbors tool for each word's one-letter neighbors in the ENABLE dictionary; code, not a model, checks every step of its answer."
 highlights:
   - "Any shortest ladder passes, not just one stored answer"
   - "Every step, word and length is checked against the dictionary by plain code"
   - "Includes puzzles with no ladder, so guessing a ladder is caught"
 steps:
-  - "Ask for one of the 20 puzzles, such as a ladder from duke to joke"
-  - "The agent checks words with is_word and submits its ladder"
+  - "Ask for one of the 15 puzzles, such as a ladder from isle to ells"
+  - "The agent searches from both ends with neighbors and submits its ladder"
   - "The verifier checks the ladder against the rules and the shortest length"

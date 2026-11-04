@@ -1,0 +1,77 @@
+{
+ "note": "The search meets, but the puzzle is reported unsolvable.",
+ "task": "solve-ladder",
+ "arguments": {
+  "start": "isle",
+  "end": "ells"
+ },
+ "steps": [
+  {
+   "tool": "neighbors",
+   "arguments": {
+    "words": [
+     "isle",
+     "ells"
+    ]
+   }
+  },
+  {
+   "tool": "neighbors",
+   "arguments": {
+    "words": [
+     "idle",
+     "alls",
+     "eels",
+     "elds",
+     "elks",
+     "elms",
+     "ills"
+    ]
+   }
+  },
+  {
+   "tool": "neighbors",
+   "arguments": {
+    "words": [
+     "idly",
+     "aals",
+     "ails",
+     "alas",
+     "albs",
+     "ales",
+     "ally",
+     "alms",
+     "alps",
+     "alts",
+     "awls",
+     "bels",
+     "cels",
+     "dels",
+     "eely",
+     "elmy",
+     "ends",
+     "gels",
+     "ilks",
+     "illy",
+     "mels",
+     "olds",
+     "sels",
+     "tels"
+    ]
+   }
+  },
+  {
+   "tool": "submit",
+   "arguments": {
+    "solvable": false,
+    "ladder": []
+   }
+  }
+ ],
+ "answer": "Submitted.",
+ "expect": {
+  "valid": false,
+  "score_max": 0.0,
+  "message_contains": "says none does"
+ }
+}

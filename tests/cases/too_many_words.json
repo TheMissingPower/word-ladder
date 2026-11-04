@@ -1,0 +1,101 @@
+{
+ "note": "A 26-word neighbors call is refused, then the prescribed search and its ladder.",
+ "task": "solve-ladder",
+ "arguments": {
+  "start": "sods",
+  "end": "qoph"
+ },
+ "steps": [
+  {
+   "tool": "neighbors",
+   "arguments": {
+    "words": [
+     "aahs",
+     "aals",
+     "abas",
+     "abba",
+     "abbe",
+     "abed",
+     "abet",
+     "able",
+     "ably",
+     "abos",
+     "abri",
+     "abut",
+     "abye",
+     "abys",
+     "aced",
+     "aces",
+     "ache",
+     "achy",
+     "acid",
+     "acme",
+     "acne",
+     "acre",
+     "acta",
+     "acts",
+     "acyl",
+     "adds"
+    ]
+   },
+   "expect_error": true
+  },
+  {
+   "tool": "neighbors",
+   "arguments": {
+    "words": [
+     "sods",
+     "qoph"
+    ]
+   }
+  },
+  {
+   "tool": "neighbors",
+   "arguments": {
+    "words": [
+     "bods",
+     "cods",
+     "gods",
+     "hods",
+     "mods",
+     "nods",
+     "pods",
+     "rods",
+     "sobs",
+     "soda",
+     "sols",
+     "sons",
+     "sops",
+     "sots",
+     "sous",
+     "sows",
+     "soys",
+     "suds",
+     "tods",
+     "yods",
+     "koph",
+     "soph",
+     "toph"
+    ]
+   }
+  },
+  {
+   "tool": "submit",
+   "arguments": {
+    "solvable": true,
+    "ladder": [
+     "sods",
+     "sops",
+     "soph",
+     "qoph"
+    ]
+   }
+  }
+ ],
+ "answer": "Submitted.",
+ "expect": {
+  "valid": true,
+  "score_min": 1.0,
+  "message_contains": "a valid shortest ladder of 4 words"
+ }
+}

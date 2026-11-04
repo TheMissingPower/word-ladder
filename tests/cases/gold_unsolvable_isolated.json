@@ -1,0 +1,32 @@
+{
+ "note": "The end word has no neighbors: the end side runs out in the first call.",
+ "task": "solve-ladder",
+ "arguments": {
+  "start": "lies",
+  "end": "jeux"
+ },
+ "steps": [
+  {
+   "tool": "neighbors",
+   "arguments": {
+    "words": [
+     "lies",
+     "jeux"
+    ]
+   }
+  },
+  {
+   "tool": "submit",
+   "arguments": {
+    "solvable": false,
+    "ladder": []
+   }
+  }
+ ],
+ "answer": "Submitted.",
+ "expect": {
+  "valid": true,
+  "score_min": 1.0,
+  "message_contains": "correctly reports that no ladder"
+ }
+}

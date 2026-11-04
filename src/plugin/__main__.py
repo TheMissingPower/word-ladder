@@ -13,7 +13,7 @@ from mcp.server.stdio import stdio_server
 from slimconfig import build_output, output_schema, plain_output
 
 from contract import TOOLS, Tool
-from plugin import is_word, pin_puzzle
+from plugin import is_word, neighbors, pin_puzzle
 
 server = Server("word-ladder")
 # NanoAgent names the one folder this plugin may write to.
@@ -22,6 +22,7 @@ WORKSPACE_ENV = "NANOAGENT_WORKSPACE"
 IMPLEMENTATIONS = {
     Tool.IS_WORD: is_word,
     Tool.PIN_PUZZLE: pin_puzzle,
+    Tool.NEIGHBORS: neighbors,
 }
 
 

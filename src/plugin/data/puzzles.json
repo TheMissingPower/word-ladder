@@ -19,103 +19,73 @@
   },
   {
     "start": "sods",
-    "end": "rows",
+    "end": "qoph",
     "solvable": true,
-    "optimal_length": 3
+    "optimal_length": 4
   },
   {
-    "start": "duke",
-    "end": "joke",
+    "start": "gley",
+    "end": "blet",
     "solvable": true,
-    "optimal_length": 3
+    "optimal_length": 4
   },
   {
-    "start": "brin",
-    "end": "bree",
+    "start": "door",
+    "end": "tout",
     "solvable": true,
-    "optimal_length": 3
-  },
-  {
-    "start": "ukes",
-    "end": "obes",
-    "solvable": true,
-    "optimal_length": 3
+    "optimal_length": 4
   },
   {
     "start": "carp",
-    "end": "caps",
+    "end": "guls",
     "solvable": true,
-    "optimal_length": 3
-  },
-  {
-    "start": "fins",
-    "end": "mink",
-    "solvable": true,
-    "optimal_length": 3
+    "optimal_length": 5
   },
   {
     "start": "clam",
-    "end": "crab",
+    "end": "heat",
     "solvable": true,
-    "optimal_length": 3
+    "optimal_length": 5
   },
   {
     "start": "aper",
-    "end": "ares",
+    "end": "knew",
     "solvable": true,
-    "optimal_length": 3
+    "optimal_length": 5
   },
   {
-    "start": "baby",
-    "end": "gamy",
+    "start": "isle",
+    "end": "ells",
     "solvable": true,
-    "optimal_length": 3
+    "optimal_length": 6
   },
   {
-    "start": "blaw",
-    "end": "bloc",
+    "start": "emir",
+    "end": "abos",
     "solvable": true,
-    "optimal_length": 3
+    "optimal_length": 6
   },
   {
-    "start": "bads",
-    "end": "fays",
+    "start": "eddy",
+    "end": "ends",
     "solvable": true,
-    "optimal_length": 3
+    "optimal_length": 6
   },
   {
-    "start": "wand",
-    "end": "wave",
-    "solvable": true,
-    "optimal_length": 3
-  },
-  {
-    "start": "acre",
-    "end": "alme",
-    "solvable": true,
-    "optimal_length": 3
-  },
-  {
-    "start": "ruth",
-    "end": "juts",
-    "solvable": true,
-    "optimal_length": 3
-  },
-  {
-    "start": "kilt",
-    "end": "djin",
+    "start": "lies",
+    "end": "jeux",
     "solvable": false,
     "optimal_length": null
   },
   {
-    "start": "huic",
-    "end": "tale",
+    "start": "epee",
+    "end": "durn",
     "solvable": false,
     "optimal_length": null
   },
   {
-    "start": "umbo",
-    "end": "hewn",
+    "start": "idyl",
+    "end": "moly",
     "solvable": false,
     "optimal_length": null
   }

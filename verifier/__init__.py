@@ -2,11 +2,12 @@
 
 from contract import Task, Tool
 
-from . import is_word, ladder, puzzle
+from . import is_word, ladder, neighbors, puzzle
 
 TOOLS = {
     Tool.IS_WORD: is_word,
     Tool.PIN_PUZZLE: puzzle,
+    Tool.NEIGHBORS: neighbors,
 }
 # task -> its output's check, verify_task(arguments, output, reference, workspace)
 TASKS = {Task.SOLVE_LADDER: ladder.verify_task}

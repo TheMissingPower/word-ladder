@@ -1,0 +1,36 @@
+{
+ "note": "The search shows no ladder, but a ladder is invented anyway.",
+ "task": "solve-ladder",
+ "arguments": {
+  "start": "lies",
+  "end": "jeux"
+ },
+ "steps": [
+  {
+   "tool": "neighbors",
+   "arguments": {
+    "words": [
+     "lies",
+     "jeux"
+    ]
+   }
+  },
+  {
+   "tool": "submit",
+   "arguments": {
+    "solvable": true,
+    "ladder": [
+     "lies",
+     "dies",
+     "jeux"
+    ]
+   }
+  }
+ ],
+ "answer": "Submitted.",
+ "expect": {
+  "valid": false,
+  "score_max": 0.0,
+  "message_contains": "no ladder from"
+ }
+}

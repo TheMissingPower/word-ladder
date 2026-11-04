@@ -4,20 +4,33 @@ import pytest
 from slimconfig import build_output, plain_output
 
 import verifier
-from contract import IsWordInput, IsWordOutput, LadderInput, LadderOutput, PuzzleOutput
+from contract import IsWordInput, IsWordOutput, LadderInput, LadderOutput, NeighborsInput, NeighborsOutput, PuzzleOutput
 from plugin.puzzles import pin_puzzle
+from verifier.checks import optimal_length
 from verifier.words import WORDS
 
 # sods -> rows: two shortest ladders of 3 words (sods rods rows, sods sows rows).
 SOLVABLE = {"start": "sods", "end": "rows"}
 # kilt -> djin: djin has no neighbors in the dictionary.
 UNSOLVABLE = {"start": "kilt", "end": "djin"}
+# cold -> warm: a longer one, 5 words (cold cord card ward warm).
+LONGER = {"start": "cold", "end": "warm"}
+
+
+def answer_key(given: LadderInput, tmp_path) -> dict:
+    """The puzzle's answer key: pin_puzzle's for a live puzzle, else a fresh BFS. The puzzles above are verifier
+    test data, kept apart from the live puzzles, which the generator chooses to fit the hosted limits."""
+    try:
+        return plain_output(pin_puzzle(given, tmp_path))
+    except ValueError:
+        steps = optimal_length(given.start, given.end)
+        return {"start": given.start, "end": given.end, "solvable": steps is not None, "optimal_length": steps}
 
 
 # The verifier gets contract instances, as NanoAgent's sandbox builds them from JSON.
 def verdict(puzzle: dict, output: dict, tmp_path) -> dict:
     given = build_output(puzzle, LadderInput)
-    reference = build_output(plain_output(pin_puzzle(given, tmp_path)), PuzzleOutput)
+    reference = build_output(answer_key(given, tmp_path), PuzzleOutput)
     return verifier.verify_task("solve-ladder", given, build_output(output, LadderOutput), reference, str(tmp_path))
 
 
@@ -31,6 +44,14 @@ def ladder(*words: str) -> dict:
 def test_passes_any_shortest_ladder(words, tmp_path) -> None:
     result = verdict(SOLVABLE, ladder(*words), tmp_path)
     assert result["valid"] is True and result["score"] == 1.0
+
+
+def test_passes_a_longer_shortest_ladder_and_fails_a_longer_one(tmp_path) -> None:
+    assert verdict(LONGER, ladder("cold", "cord", "card", "ward", "warm"), tmp_path)["valid"] is True
+    result = verdict(LONGER, ladder("cold", "cord", "word", "ward", "ward", "warm"), tmp_path)
+    assert result["valid"] is False
+    longer = verdict(LONGER, ladder("cold", "cord", "card", "cart", "wart", "warm"), tmp_path)
+    assert longer["valid"] is False and "not shortest" in longer["message"]
 
 
 def test_passes_an_unsolvable_puzzle_reported_as_unsolvable(tmp_path) -> None:
@@ -133,7 +154,7 @@ def test_refuses_a_puzzle_input_that_is_no_puzzle(puzzle, reason) -> None:
 
 def test_refuses_a_tampered_answer_key(tmp_path) -> None:
     given = build_output(SOLVABLE, LadderInput)
-    pinned = plain_output(pin_puzzle(given, tmp_path))
+    pinned = answer_key(given, tmp_path)
     assert verifier.verify_output("pin_puzzle", given, build_output(pinned, PuzzleOutput), "")["valid"] is True
     for tampered in [
         {**pinned, "optimal_length": 5},
@@ -142,3 +163,39 @@ def test_refuses_a_tampered_answer_key(tmp_path) -> None:
         {**pinned, "end": "rods"},
     ]:
         assert verifier.verify_output("pin_puzzle", given, build_output(tampered, PuzzleOutput), "")["valid"] is False
+
+
+def brute_force(word: str) -> list[str]:
+    return sorted(other for other in WORDS if sum(a != b for a, b in zip(word, other)) == 1)
+
+
+def test_checks_neighbors_calls() -> None:
+    given = build_output({"words": ["cold", "djin"]}, NeighborsInput)
+    assert verifier.verify_input("neighbors", given)["valid"] is True
+    cold = brute_force("cold")
+    right = {"results": [{"word": "cold", "neighbors": cold}, {"word": "djin", "neighbors": []}]}
+    assert verifier.verify_output("neighbors", given, build_output(right, NeighborsOutput), "")["valid"] is True
+    for wrong in [
+        {"results": [{"word": "cold", "neighbors": cold[1:]}, {"word": "djin", "neighbors": []}]},
+        {"results": [{"word": "cold", "neighbors": [*cold, "warm"]}, {"word": "djin", "neighbors": []}]},
+        {"results": [{"word": "djin", "neighbors": []}, {"word": "cold", "neighbors": cold}]},
+        {"results": [{"word": "cold", "neighbors": cold}]},
+    ]:
+        assert verifier.verify_output("neighbors", given, build_output(wrong, NeighborsOutput), "")["valid"] is False
+
+
+@pytest.mark.parametrize(
+    ("words", "reason"),
+    [
+        (sorted(WORDS)[:26], "at most 25 words per call, got 26"),
+        ([], "at least 1 word"),
+        (["cold", "zake"], "'zake' is not in the dictionary"),
+        (["colder"], "does not have 4 letters"),
+        (["Cold"], "not lowercase ASCII letters"),
+    ],
+    ids=["26-words", "empty", "unknown", "wrong-length", "uppercase"],
+)
+def test_refuses_a_neighbors_call_out_of_bounds(words, reason) -> None:
+    result = verifier.verify_input("neighbors", build_output({"words": words}, NeighborsInput))
+    assert result["valid"] is False and reason in result["message"]
+    assert verifier.verify_input("neighbors", build_output({"words": sorted(WORDS)[:25]}, NeighborsInput))["valid"]

@@ -1,26 +1,112 @@
-"""Freeze the puzzles and the verifier's word list. Run once, from the plugin root:
+"""Freeze the puzzles, the verifier's word list and the scripted cases. Run once, from the plugin root:
 
     uv run python -m plugin.generate_puzzles
 
-It writes src/plugin/data/puzzles.json and verifier/words.py. Both are committed; nothing regenerates them at
-run or verification time, and the same seed and dictionary always give the same files.
+It writes src/plugin/data/puzzles.json, verifier/words.py and tests/cases/*.json, and prints each puzzle's
+simulated search (the README's table). All are committed; nothing regenerates them at run or verification time,
+and the same seed and dictionary always give the same files.
+
+A puzzle is live only if the search the task's instructions prescribe (two_sided_search) fits RUSH Lab's hosted
+limits: at most MAX_CALLS neighbors calls (with submit, 5 tool steps; the 6th step must answer), at most
+MAX_NEIGHBOR_WORDS words per call, and a small token cost for the tool results, which every later request
+re-sends.
 """
 
 from __future__ import annotations
 
 import json
+import math
 import random
 import textwrap
+from dataclasses import dataclass, field
 from pathlib import Path
 
+from contract import MAX_NEIGHBOR_WORDS
 from plugin.dictionary import WORDS, distances, neighbors
 from plugin.puzzles import PUZZLES
 
 SEED = 480
-# Optimal lengths (words, both ends included) of the solvable puzzles: all 3, one step through a middle word, since
-# longer ladders took the agent too much thinking.
-LENGTHS = [3] * 17
-VERIFIER_WORDS = Path(__file__).parents[2] / "verifier" / "words.py"
+# Optimal lengths (words, both ends included) of the solvable live puzzles.
+LENGTHS = [3] * 3 + [4] * 3 + [5] * 3 + [6] * 3
+MAX_CALLS = 4  # neighbors calls; then submit (step 5) and the forced answer (step 6)
+UNSOLVABLE_CALLS = 2  # an unsolvable puzzle's search runs out of words within this many calls
+TOKEN_BUDGET = 20_000  # estimated tokens of tool results over the whole run, re-sends included
+CHARS_PER_TOKEN = 3  # conservative for JSON lists of 4-letter words
+TOKENS_PER_WORD = 1.3  # the brief's rough figure, reported alongside
+ROOT = Path(__file__).parents[2]
+VERIFIER_WORDS = ROOT / "verifier" / "words.py"
+CASES = ROOT / "tests" / "cases"
+
+
+@dataclass
+class Search:
+    """The prescribed search: neighbors on [start, end], then on every newest word of both sides, until a word
+    is on both sides (``meet``) or a side has no new word (``dead``); ``unfinished`` past ``max_calls``."""
+
+    calls: list[list[str]] = field(default_factory=list)
+    outcome: str = "unfinished"
+    ladder: list[str] = field(default_factory=list)  # a shortest ladder, as the search finds it, when met
+    output_chars: list[int] = field(default_factory=list)  # each call's result, as compact JSON
+    output_words: int = 0  # every word in every result: each asked word and its neighbors
+
+    @property
+    def tokens(self) -> int:
+        """Estimated tokens of tool results the run is billed: call k's result is in every later request (the
+        later calls', submit's at step n+1 and the answer's at n+2)."""
+        n = len(self.calls)
+        return sum(math.ceil(chars / CHARS_PER_TOKEN) * (n + 2 - k) for k, chars in enumerate(self.output_chars, 1))
+
+    def fits(self) -> bool:
+        return (
+            self.outcome in ("meet", "dead")
+            and len(self.calls) <= MAX_CALLS
+            and max(map(len, self.calls)) <= MAX_NEIGHBOR_WORDS
+            and self.tokens < TOKEN_BUDGET
+        )
+
+
+def two_sided_search(start: str, end: str, max_calls: int = MAX_CALLS) -> Search:
+    search = Search()
+    depth = {"start": {start: 0}, "end": {end: 0}}
+    parent: dict[str, dict[str, str]] = {"start": {}, "end": {}}
+    newest = {"start": [start], "end": [end]}
+    while len(search.calls) < max_calls:
+        call = newest["start"] + newest["end"]
+        search.calls.append(call)
+        if len(call) > MAX_NEIGHBOR_WORDS:  # the tool would refuse it: the puzzle cannot be live
+            search.outcome = "too_wide"
+            return search
+        results = []
+        added: dict[str, list[str]] = {}
+        for side in ("start", "end"):
+            added[side] = []
+            for word in newest[side]:
+                listed = neighbors(word)
+                results.append({"word": word, "neighbors": listed})
+                for after in listed:
+                    if after not in depth[side]:
+                        depth[side][after] = depth[side][word] + 1
+                        parent[side][after] = word
+                        added[side].append(after)
+        search.output_chars.append(len(json.dumps({"results": results})))
+        search.output_words += sum(1 + len(result["neighbors"]) for result in results)
+        met = [(depth["start"][word] + depth["end"][word], word) for word in depth["start"] if word in depth["end"]]
+        if met:
+            _, middle = min(met)
+            search.outcome, search.ladder = "meet", trace(middle, parent["start"])[::-1] + trace(middle, parent["end"])[1:]
+            return search
+        newest = {side: sorted(added[side]) for side in added}
+        if not newest["start"] or not newest["end"]:
+            search.outcome = "dead"
+            return search
+    return search
+
+
+def trace(word: str, parents: dict[str, str]) -> list[str]:
+    path = [word]
+    while path[-1] in parents:
+        path.append(parents[path[-1]])
+    return path
 
 
 def components() -> list[list[str]]:
@@ -39,23 +125,34 @@ def puzzles(rng: random.Random) -> list[dict]:
     graph = components()
     giant = graph[0]
     chosen: list[dict] = []
+    taken: set[tuple[str, str]] = set()
     for length in LENGTHS:
         while True:
             start = rng.choice(giant)
             ends = sorted(word for word, steps in distances(start).items() if steps == length - 1)
-            if ends:
-                end = rng.choice(ends)
-                if all((start, end) != (puzzle["start"], puzzle["end"]) for puzzle in chosen):
-                    break
+            if not ends:
+                continue
+            end = rng.choice(ends)
+            if (start, end) not in taken and two_sided_search(start, end).fits():
+                break
+        taken.add((start, end))
         chosen.append({"start": start, "end": end, "solvable": True, "optimal_length": length})
-    # No ladder: an isolated word (no neighbors at all) at either end, and a word of a small component (3 to 6
-    # words) to the giant one, which can be shown unsolvable by exhausting the small side.
+    # No ladder: an isolated word (no neighbors at all) at the end, then at the start, and a word of a small
+    # component (2 to 5 words) to a giant-component word; each side's search runs out within 2 calls.
     isolated = [word for word in sorted(WORDS) if not neighbors(word)]
-    small = [word for component in graph if 3 <= len(component) <= 6 for word in component]
-    pairs = [(rng.choice(giant), rng.choice(isolated)), (rng.choice(isolated), rng.choice(giant))]
-    pairs.append((rng.choice(small), rng.choice(giant)))
-    chosen += [{"start": start, "end": end, "solvable": False, "optimal_length": None} for start, end in pairs]
+    small = [word for component in graph if 2 <= len(component) <= 5 for word in component]
+    for pick in (lambda: (rng.choice(giant), rng.choice(isolated)), lambda: (rng.choice(isolated), rng.choice(giant))):
+        chosen.append(unsolvable(pick))
+    chosen.append(unsolvable(lambda: (rng.choice(small), rng.choice(giant))))
     return chosen
+
+
+def unsolvable(pick) -> dict:
+    while True:
+        start, end = pick()
+        search = two_sided_search(start, end)
+        if search.fits() and search.outcome == "dead" and len(search.calls) <= UNSOLVABLE_CALLS:
+            return {"start": start, "end": end, "solvable": False, "optimal_length": None}
 
 
 def words_module() -> str:
@@ -66,9 +163,90 @@ def words_module() -> str:
     )
 
 
+def longer_ladder(start: str, end: str) -> list[str]:
+    """A valid ladder (no repeated word) longer than the shortest, as short as one can be: a bounded search."""
+    to_end = distances(end)
+    shortest = to_end[start] + 1
+    for length in range(shortest + 1, shortest + 6):
+        ladder = _ladder_of(length, [start], end, to_end)
+        if ladder:
+            return ladder
+    raise ValueError(f"no ladder from {start} to {end} a little longer than the shortest")
+
+
+def _ladder_of(length: int, path: list[str], end: str, to_end: dict[str, int]) -> list[str] | None:
+    if path[-1] == end:
+        return path if len(path) == length else None
+    for after in neighbors(path[-1]):
+        if after not in path and len(path) + to_end.get(after, length) < length:
+            found = _ladder_of(length, path + [after], end, to_end)
+            if found:
+                return found
+    return None
+
+
+def cases(frozen: list[dict]) -> dict[str, dict]:
+    """The scripted cases (tests/cases/<name>.json): the prescribed neighbors calls, then a submit, and the
+    verdict the real verifier must give. tests/replay.py plays them through the real tools with no model."""
+    first = {
+        "length6": next(puzzle for puzzle in frozen if puzzle["optimal_length"] == 6),
+        "length4": next(puzzle for puzzle in frozen if puzzle["optimal_length"] == 4),
+        "isolated": next(puzzle for puzzle in frozen if not puzzle["solvable"]),
+        "component": [puzzle for puzzle in frozen if not puzzle["solvable"]][-1],
+    }
+
+    def calls(puzzle: dict) -> list[dict]:
+        return [{"tool": "neighbors", "arguments": {"words": call}} for call in two_sided_search(puzzle["start"], puzzle["end"]).calls]
+
+    def case(note: str, puzzle: dict, steps: list[dict], submit: dict, expect: dict) -> dict:
+        return {
+            "note": note,
+            "task": "solve-ladder",
+            "arguments": {"start": puzzle["start"], "end": puzzle["end"]},
+            "steps": steps + [{"tool": "submit", "arguments": submit}],
+            "answer": "Submitted.",
+            "expect": expect,
+        }
+
+    def gold(puzzle: dict) -> dict:
+        if not puzzle["solvable"]:
+            return {"solvable": False, "ladder": []}
+        return {"solvable": True, "ladder": two_sided_search(puzzle["start"], puzzle["end"]).ladder}
+
+    six, four, isolated, component = first["length6"], first["length4"], first["isolated"], first["component"]
+    too_many = sorted(WORDS)[: MAX_NEIGHBOR_WORDS + 1]
+    passed = {"valid": True, "score_min": 1.0}
+    return {
+        "gold_length6": case("The prescribed search on a 6-word puzzle, then its ladder.", six, calls(six), gold(six), {**passed, "message_contains": "a valid shortest ladder of 6 words"}),
+        "gold_length4": case("The prescribed search on a 4-word puzzle, then its ladder.", four, calls(four), gold(four), {**passed, "message_contains": "a valid shortest ladder of 4 words"}),
+        "gold_unsolvable_isolated": case("The end word has no neighbors: the end side runs out in the first call.", isolated, calls(isolated), gold(isolated), {**passed, "message_contains": "correctly reports that no ladder"}),
+        "gold_unsolvable_component": case("The start word sits in a small component: its side runs out first.", component, calls(component), gold(component), {**passed, "message_contains": "correctly reports that no ladder"}),
+        "longer_ladder": case("The search, then a valid ladder longer than the shortest.", six, calls(six), {"solvable": True, "ladder": longer_ladder(six["start"], six["end"])}, {"valid": False, "score_max": 0.0, "message_contains": "not shortest"}),
+        "invented_ladder_unsolvable": case("The search shows no ladder, but a ladder is invented anyway.", isolated, calls(isolated), {"solvable": True, "ladder": [isolated["start"], neighbors(isolated["start"])[0], isolated["end"]]}, {"valid": False, "score_max": 0.0, "message_contains": "no ladder from"}),
+        "says_unsolvable_when_solvable": case("The search meets, but the puzzle is reported unsolvable.", six, calls(six), {"solvable": False, "ladder": []}, {"valid": False, "score_max": 0.0, "message_contains": "says none does"}),
+        "too_many_words": case("A 26-word neighbors call is refused, then the prescribed search and its ladder.", four, [{"tool": "neighbors", "arguments": {"words": too_many}, "expect_error": True}] + calls(four), gold(four), {**passed, "message_contains": "a valid shortest ladder of 4 words"}),
+    }
+
+
+def table(frozen: list[dict]) -> str:
+    """Each live puzzle's simulated search, as the README's markdown table."""
+    rows = ["| start | end | optimal_length | calls | words per call | output words | est. tokens (re-sent) |", "|---|---|---|---|---|---|---|"]
+    for puzzle in frozen:
+        search = two_sided_search(puzzle["start"], puzzle["end"])
+        length = puzzle["optimal_length"] or "no ladder"
+        sizes = ", ".join(str(len(call)) for call in search.calls)
+        rows.append(f"| {puzzle['start']} | {puzzle['end']} | {length} | {len(search.calls)} | {sizes} | {search.output_words} | {search.tokens:,} |")
+    return "\n".join(rows)
+
+
 def main() -> None:
-    PUZZLES.write_text(json.dumps(puzzles(random.Random(SEED)), indent=2) + "\n", encoding="utf-8")
+    frozen = puzzles(random.Random(SEED))
+    PUZZLES.write_text(json.dumps(frozen, indent=2) + "\n", encoding="utf-8")
     VERIFIER_WORDS.write_text(words_module(), encoding="utf-8")
+    CASES.mkdir(exist_ok=True)
+    for name, case in cases(frozen).items():
+        (CASES / f"{name}.json").write_text(json.dumps(case, indent=1) + "\n", encoding="utf-8")
+    print(table(frozen))
 
 
 if __name__ == "__main__":

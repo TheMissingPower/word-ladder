@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections import deque
+from functools import cache
 from pathlib import Path
 from string import ascii_lowercase
 
@@ -14,8 +15,13 @@ WORDS = frozenset(word for word in ENABLE.read_text(encoding="ascii").splitlines
 
 def neighbors(word: str) -> list[str]:
     """The dictionary words one letter different from ``word``, in alphabetical order."""
+    return list(_neighbors(word))
+
+
+@cache
+def _neighbors(word: str) -> tuple[str, ...]:
     found = {word[:i] + letter + word[i + 1 :] for i in range(len(word)) for letter in ascii_lowercase}
-    return sorted((found - {word}) & WORDS)
+    return tuple(sorted((found - {word}) & WORDS))
 
 
 def distances(start: str) -> dict[str, int]:

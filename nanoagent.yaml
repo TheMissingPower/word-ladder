@@ -1,7 +1,7 @@
 _ > nanoagent.plugin.v0001.ManifestConfig:
 id: word-ladder
 name: Word Ladder
-version: 0.2.0
+version: 0.3.0
 status: ready
 spec: nanoagent.plugin/v0001
 
@@ -21,13 +21,15 @@ tools > dict[contract.Tool, nanoagent.plugin.v0001.ToolConfig]:
     description: Tell whether a word is in the puzzle dictionary, the 4-letter words of the ENABLE word list
   pin_puzzle:
     description: Pin a frozen puzzle's answer key, whether it has a ladder and the number of words in a shortest one
+  neighbors:
+    description: For each of up to 25 dictionary words, give every dictionary word one letter different from it, in alphabetical order
 
 # One entry per contract.Task; its input class is contract.TASKS's.
 tasks > dict[contract.Task, nanoagent.plugin.v0001.TaskConfig]:
   solve-ladder:
     description: Find a shortest word ladder between two 4-letter words, or report that none exists
     runner: agent
-    tools: [is_word]
+    tools: [is_word, neighbors]
     reference: pin_puzzle
     instructions: |-
       Find the shortest ladder from the start word to the end word, changing one letter per step, or report that no ladder exists.
@@ -40,5 +42,13 @@ tasks > dict[contract.Task, nanoagent.plugin.v0001.TaskConfig]:
       - The ladder includes both the start word and the end word.
       - The ladder must be as short as possible.
       - If no ladder exists, say so instead of giving one.
-      The dictionary is the 4-letter words of the ENABLE word list. Check any word you are unsure of with is_word: it is the only authority on what is a word. ENABLE holds many uncommon words, so a word you do not know may still be in it.
+      The dictionary is the 4-letter words of the ENABLE word list. ENABLE holds many uncommon words; neighbors and is_word are the only authority on what is a word.
+      Method:
+      - Do not search for ladders in your head. Use the neighbors tool.
+      - Search from both ends: call neighbors on the start and end words together, then on the newest words from each side, until a word appears on both sides.
+      - Expand every newest word on a side, not just a few, so the ladder you find is guaranteed shortest. A side's newest words are the neighbors its last call found that the side had not seen before.
+      - If a word you expanded on one side appears among the other side's new neighbors, that ladder is one word shorter than one through a word new on both sides: prefer it.
+      - Build the ladder by tracing each word back to the word whose neighbors listed it, on each side.
+      - If one side has no new words to expand, the puzzle is unsolvable.
+      - Keep each step's reasoning brief. Call submit as soon as you have the answer.
       Submit solvable true and the ladder, start first and end last; or solvable false and an empty ladder.

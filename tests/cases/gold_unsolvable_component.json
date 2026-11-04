@@ -1,0 +1,52 @@
+{
+ "note": "The start word sits in a small component: its side runs out first.",
+ "task": "solve-ladder",
+ "arguments": {
+  "start": "idyl",
+  "end": "moly"
+ },
+ "steps": [
+  {
+   "tool": "neighbors",
+   "arguments": {
+    "words": [
+     "idyl",
+     "moly"
+    ]
+   }
+  },
+  {
+   "tool": "neighbors",
+   "arguments": {
+    "words": [
+     "idol",
+     "odyl",
+     "coly",
+     "holy",
+     "mola",
+     "mold",
+     "mole",
+     "moll",
+     "mols",
+     "molt",
+     "mony",
+     "mopy",
+     "poly"
+    ]
+   }
+  },
+  {
+   "tool": "submit",
+   "arguments": {
+    "solvable": false,
+    "ladder": []
+   }
+  }
+ ],
+ "answer": "Submitted.",
+ "expect": {
+  "valid": true,
+  "score_min": 1.0,
+  "message_contains": "correctly reports that no ladder"
+ }
+}
