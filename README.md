@@ -16,7 +16,7 @@ checks the answer.
 |---|---|---|
 | `neighbors` | For each of 1 to 25 dictionary words, gives every dictionary word one letter different from it, alphabetical | `src/plugin/neighbors.py` |
 | `is_word` | Tells whether a word is in the puzzle dictionary (the 4-letter words of ENABLE) | `src/plugin/is_word.py` |
-| `pin_puzzle` | Pins a frozen puzzle's answer key: whether it is solvable, and the length of a shortest ladder | `src/plugin/puzzles.py` |
+| `pin_puzzle` | Pins a puzzle's answer key: whether it is solvable, and the length of a shortest ladder | `src/plugin/puzzles.py` |
 
 `neighbors` takes `{"words": list[str]}` and returns
 `{"results": [{"word": str, "neighbors": list[str]}, ...]}`, one entry per asked
@@ -48,8 +48,19 @@ The rules the agent is given:
 - If no ladder exists, say so instead of giving one.
 
 `pin_puzzle` is the task's reference tool. NanoAgent runs it before the agent
-starts, so the agent never sees its output. It accepts only the 15 frozen
-puzzles below and refuses any other pair.
+starts, so the agent never sees its output. It accepts any pair of
+dictionary words whose search fits the hosted limits (see below), not only the
+15 frozen puzzles. That covers every pair with a 3-word ladder, 4-word ladders
+whose search stays small, and pairs with no ladder where one side runs out of
+words within 2 calls. For a pair that isn't frozen it computes the answer key by
+breadth-first search, which the verifier checks again. It refuses any other pair
+before the agent starts, with the reason:
+
+- a word that isn't in the dictionary;
+- the same word twice;
+- two words one letter apart, which leave nothing to search;
+- a pair whose search is too big for the hosted agent, such as `cold -> warm`
+  (5 words) or `love -> hate` (4 words, but a wide search).
 
 ### Search procedure
 
@@ -102,9 +113,11 @@ Now:
   that re-sent total at 3 characters of JSON per token, and it must stay under
   20,000 tokens. The largest live puzzle comes to about 900.
 
-The generator samples puzzles with a fixed seed and keeps only the ones whose
-search meets these limits. Longer or harder puzzles, such as `cold -> warm`
-(5 words) and `kilt -> djin`, appear only as verifier test data.
+`src/plugin/search.py` holds the check (`two_sided_search` and `Search.live`).
+`pin_puzzle` applies it to every pair it is asked about, and the generator
+applies it to the puzzles it freezes, which it samples with a fixed seed. Longer
+puzzles, such as `cold -> warm` (5 words), are refused, and appear only as
+verifier test data.
 
 ### Puzzles
 
@@ -173,11 +186,12 @@ agent called.
 │   ├── dictionary.py        # the 4-letter ENABLE words and the ladder graph (BFS)
 │   ├── is_word.py           # the is_word tool
 │   ├── neighbors.py         # the neighbors tool
-│   ├── puzzles.py           # the frozen puzzles and the pin_puzzle tool
-│   ├── generate_puzzles.py  # the prescribed search; writes data/puzzles.json, verifier/words.py, tests/cases/
+│   ├── puzzles.py           # the frozen puzzles and the pin_puzzle tool (any live pair)
+│   ├── search.py            # the prescribed search, simulated, and whether a pair fits the hosted limits
+│   ├── generate_puzzles.py  # writes data/puzzles.json, verifier/words.py, tests/cases/
 │   └── data/
 │       ├── enable1.txt      # the ENABLE word list, vendored unchanged
-│       └── puzzles.json     # the 15 frozen puzzles
+│       └── puzzles.json     # the 15 frozen example puzzles
 ├── tests/           # test_verifier.py (the verifier's cases), test_plugin.py (tools, data, generator, budget)
 │   ├── cases/       # scripted runs: neighbors calls then a submit, and the verdict each must get
 │   ├── replay.py    # plays a case through the real tools and verifier, with no model
@@ -218,8 +232,9 @@ files byte for byte, which a test checks, and prints the puzzle table above:
 uv run python -m plugin.generate_puzzles
 ```
 
-To use the plugin, publish it on RUSH Lab, open it, and ask its chat for one of
-the puzzles, for example "Find a word ladder from inch to each". The result card
+To use the plugin, publish it on RUSH Lab, open it, and ask its chat for a
+ladder, for example "Find a word ladder from inch to each" or "from cold to
+bolt". Any pair with a 3-word ladder works, as do the frozen puzzles above. The result card
 shows the verifier's verdict.
 
 Publishing checks every plugin rule: push the plugin to a public GitHub

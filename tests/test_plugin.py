@@ -12,21 +12,9 @@ import verifier.words
 from contract import MAX_NEIGHBOR_WORDS, IsWordInput, LadderInput, NeighborsInput
 from plugin import is_word, neighbors, pin_puzzle
 from plugin.dictionary import ENABLE, WORDS, distances
-from plugin.generate_puzzles import (
-    CASES,
-    LIVE_CALL_WORDS,
-    LIVE_CALLS,
-    MAX_CALLS,
-    SEED,
-    TOKEN_BUDGET,
-    UNSOLVABLE_CALLS,
-    VERIFIER_WORDS,
-    cases,
-    puzzles,
-    two_sided_search,
-    words_module,
-)
+from plugin.generate_puzzles import CASES, SEED, VERIFIER_WORDS, cases, puzzles, words_module
 from plugin.puzzles import PUZZLES, load_puzzles
+from plugin.search import LIVE_CALL_WORDS, LIVE_CALLS, MAX_CALLS, TOKEN_BUDGET, UNSOLVABLE_CALLS, two_sided_search
 
 # sha256 of enable1.txt as published at github.com/dolph/dictionary (172,823 words, LF line endings).
 ENABLE_SHA256 = "3f16130220645692ed49c7134e24a18504c2ca55b3c012f7290e3e77c63b1a89"
@@ -128,9 +116,49 @@ def test_is_word_answers_from_the_dictionary(tmp_path: Path) -> None:
     assert is_word(IsWordInput(word="colder"), tmp_path).is_word is False
 
 
-def test_pin_puzzle_pins_only_frozen_puzzles(tmp_path: Path) -> None:
-    live = LIVE[0]
-    pinned = pin_puzzle(LadderInput(start=live.start, end=live.end), tmp_path)
-    assert (pinned.solvable, pinned.optimal_length) == (live.solvable, live.optimal_length)
-    with pytest.raises(ValueError, match="not one of this plugin's puzzles"):
-        pin_puzzle(LadderInput(start="cold", end="warm"), tmp_path)
+def test_pin_puzzle_pins_the_frozen_puzzles(tmp_path: Path) -> None:
+    for live in LIVE:
+        assert pin_puzzle(LadderInput(start=live.start, end=live.end), tmp_path) == live
+
+
+@pytest.mark.parametrize(
+    ("start", "end", "solvable", "optimal_length"),
+    [("cold", "bolt", True, 3), ("cold", "gild", True, 3), ("kilt", "djin", False, None)],
+    ids=["3-words", "3-words-two-changes", "isolated-end"],
+)
+def test_pin_puzzle_answers_a_live_pair_off_the_list(start, end, solvable, optimal_length, tmp_path: Path) -> None:
+    assert (start, end) not in {(puzzle.start, puzzle.end) for puzzle in LIVE}
+    pinned = pin_puzzle(LadderInput(start=start, end=end), tmp_path)
+    assert (pinned.start, pinned.end, pinned.solvable, pinned.optimal_length) == (start, end, solvable, optimal_length)
+    steps = distances(start).get(end)
+    assert optimal_length == (None if steps is None else steps + 1)
+
+
+def test_pin_puzzle_answers_every_3_word_pair(tmp_path: Path) -> None:
+    # Every pair with a middle word fits: one neighbors call on [start, end], and every meeting is a 3-word ladder.
+    rng = random.Random(1)
+    words = sorted(WORDS)
+    tried = 0
+    while tried < 200:
+        start = rng.choice(words)
+        ends = sorted(word for word, steps in distances(start).items() if steps == 2)
+        if ends:
+            pinned = pin_puzzle(LadderInput(start=start, end=rng.choice(ends)), tmp_path)
+            assert (pinned.solvable, pinned.optimal_length) == (True, 3)
+            tried += 1
+
+
+@pytest.mark.parametrize(
+    ("start", "end", "reason"),
+    [
+        ("cold", "warm", "cold -> warm (a shortest ladder of 5 words) needs a bigger search"),
+        ("love", "hate", "a shortest ladder of 4 words"),
+        ("cold", "cord", "differ in one letter"),
+        ("zake", "cold", "start 'zake' is not a 4-letter word in the dictionary"),
+        ("cold", "cold", "start and end must differ"),
+    ],
+    ids=["5-words", "wide-4-words", "adjacent", "unknown", "same"],
+)
+def test_pin_puzzle_refuses_a_pair_the_hosted_agent_cannot_finish(start, end, reason, tmp_path: Path) -> None:
+    with pytest.raises(ValueError, match=reason.replace("(", r"\(").replace(")", r"\)")):
+        pin_puzzle(LadderInput(start=start, end=end), tmp_path)

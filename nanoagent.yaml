@@ -1,7 +1,7 @@
 _ > nanoagent.plugin.v0001.ManifestConfig:
 id: word-ladder
 name: Word Ladder
-version: 0.4.0
+version: 0.5.0
 status: ready
 spec: nanoagent.plugin/v0001
 
@@ -20,7 +20,7 @@ tools > dict[contract.Tool, nanoagent.plugin.v0001.ToolConfig]:
   is_word:
     description: Tell whether a word is in the puzzle dictionary, the 4-letter words of the ENABLE word list
   pin_puzzle:
-    description: Pin a frozen puzzle's answer key, whether it has a ladder and the number of words in a shortest one
+    description: Pin a puzzle's answer key, whether it has a ladder and the number of words in a shortest one; any pair of dictionary words whose search fits the hosted limits, refusing others with the reason
   neighbors:
     description: For each of up to 25 dictionary words, give every dictionary word one letter different from it, in alphabetical order
 

@@ -5,7 +5,8 @@ highlights:
   - "Any shortest ladder passes, not just one stored answer"
   - "Every step, word and length is checked against the dictionary by plain code"
   - "Includes puzzles with no ladder, so guessing a ladder is caught"
+  - "Not limited to a stored list: any pair the agent can finish within the hosted limits is accepted"
 steps:
-  - "Ask for one of the 15 puzzles, such as a ladder from inch to each"
+  - "Ask for a ladder between two 4-letter words, such as inch to each: any pair with a 3-word ladder works"
   - "The agent searches from both ends with neighbors and submits its ladder"
   - "The verifier checks the ladder against the rules and the shortest length"

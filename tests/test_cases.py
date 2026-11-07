@@ -10,7 +10,7 @@ import pytest
 from replay import matches, replay
 
 from contract import MAX_NEIGHBOR_WORDS
-from plugin.generate_puzzles import two_sided_search
+from plugin.search import two_sided_search
 
 CASES = sorted((Path(__file__).resolve().parent / "cases").glob("*.json"))
 
