@@ -9,7 +9,6 @@ from pathlib import Path
 import pytest
 from replay import matches, replay
 
-from contract import MAX_NEIGHBOR_WORDS
 from plugin.search import two_sided_search
 
 CASES = sorted((Path(__file__).resolve().parent / "cases").glob("*.json"))
@@ -22,7 +21,7 @@ def load(case_file: Path) -> dict:
 def test_there_are_gold_and_broken_cases() -> None:
     names = {case.stem for case in CASES}
     assert {"gold_length4", "gold_length3", "gold_unsolvable_isolated", "gold_unsolvable_component"} <= names
-    assert {"longer_ladder", "invented_ladder_unsolvable", "says_unsolvable_when_solvable", "too_many_words"} <= names
+    assert {"longer_ladder", "invented_ladder_unsolvable", "says_unsolvable_when_solvable", "refused_unknown_word"} <= names
 
 
 @pytest.mark.parametrize("case_file", CASES, ids=[case.stem for case in CASES])
@@ -38,7 +37,6 @@ def test_each_case_keeps_to_the_hosted_budget(case_file: Path) -> None:
     steps = [step for step in case["steps"] if not step.get("expect_error")]
     assert {step["tool"] for step in steps} <= {"neighbors", "is_word", "submit"} and steps[-1]["tool"] == "submit"
     assert len(case["steps"]) <= 5, "the hosted agent has six steps and the last may not call a tool"
-    assert all(len(step["arguments"]["words"]) <= MAX_NEIGHBOR_WORDS for step in steps if step["tool"] == "neighbors")
     if case_file.stem.startswith("gold"):
         start, end = case["arguments"]["start"], case["arguments"]["end"]
         assert [step["arguments"]["words"] for step in steps[:-1]] == two_sided_search(start, end).calls

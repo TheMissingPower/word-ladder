@@ -1,5 +1,5 @@
 {
- "note": "A 26-word neighbors call is refused, then the prescribed search and its ladder.",
+ "note": "A neighbors call with a word not in the dictionary is refused, then the prescribed search and its ladder.",
  "task": "solve-ladder",
  "arguments": {
   "start": "jaws",
@@ -10,32 +10,7 @@
    "tool": "neighbors",
    "arguments": {
     "words": [
-     "aahs",
-     "aals",
-     "abas",
-     "abba",
-     "abbe",
-     "abed",
-     "abet",
-     "able",
-     "ably",
-     "abos",
-     "abri",
-     "abut",
-     "abye",
-     "abys",
-     "aced",
-     "aces",
-     "ache",
-     "achy",
-     "acid",
-     "acme",
-     "acne",
-     "acre",
-     "acta",
-     "acts",
-     "acyl",
-     "adds"
+     "zake"
     ]
    },
    "expect_error": true

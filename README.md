@@ -14,15 +14,15 @@ checks the answer.
 
 | Tool | Does | Code |
 |---|---|---|
-| `neighbors` | For each of 1 to 25 dictionary words, gives every dictionary word one letter different from it, alphabetical | `src/plugin/neighbors.py` |
+| `neighbors` | For each of any number of dictionary words, gives every dictionary word one letter different from it, alphabetical | `src/plugin/neighbors.py` |
 | `is_word` | Tells whether a word is in the puzzle dictionary (the 4-letter words of ENABLE) | `src/plugin/is_word.py` |
 | `pin_puzzle` | Pins a puzzle's answer key: whether it is solvable, and the length of a shortest ladder | `src/plugin/puzzles.py` |
 
 `neighbors` takes `{"words": list[str]}` and returns
 `{"results": [{"word": str, "neighbors": list[str]}, ...]}`, one entry per asked
-word in the order asked. It refuses an empty call, a call of more than 25 words
-(`MAX_NEIGHBOR_WORDS` in `contract.py`), and any word that is not 4 lowercase
-letters or not in the dictionary, naming the bad word. Both the tool and the
+word in the order asked. There is no limit on how many words one call takes. It
+refuses an empty call and any word that is not 4 lowercase letters or not in the
+dictionary, naming the bad word. Both the tool and the
 verifier's input check (`verifier/neighbors.py`) refuse these, and the verifier
 checks every answer against a brute-force scan of the dictionary.
 
@@ -50,17 +50,18 @@ The rules the agent is given:
 `pin_puzzle` is the task's reference tool. NanoAgent runs it before the agent
 starts, so the agent never sees its output. It accepts any pair of
 dictionary words whose search fits the hosted limits (see below), not only the
-15 frozen puzzles. That covers every pair with a 3-word ladder, 4-word ladders
-whose search stays small, and pairs with no ladder where one side runs out of
-words within 2 calls. For a pair that isn't frozen it computes the answer key by
+15 frozen puzzles. That covers every pair with a 3-word or 4-word ladder, and
+pairs with no ladder where one side runs out of words within 2 calls. For a
+pair that isn't frozen it computes the answer key by
 breadth-first search, which the verifier checks again. It refuses any other pair
 before the agent starts, with the reason:
 
 - a word that isn't in the dictionary;
 - the same word twice;
 - two words one letter apart, which leave nothing to search;
-- a pair whose search is too big for the hosted agent, such as `cold -> warm`
-  (5 words) or `love -> hate` (4 words, but a wide search).
+- a ladder longer than 4 words, such as `cold -> warm` (5 words) or
+  `isle -> ells` (6 words);
+- no ladder, but neither side runs out of words within 2 calls.
 
 ### Search procedure
 
@@ -68,21 +69,26 @@ The instructions tell the agent not to search in its head, and give it a
 two-sided breadth-first search to run with `neighbors`:
 
 1. Call `neighbors` on `[start, end]`.
-2. Each later call expands every *newest* word of both sides: the neighbors the
-   side's last call found that the side had not seen before.
+2. Each later call expands one side only: the side with fewer *newest* words
+   (the start side on a tie), and every one of them. A side's newest words are
+   the neighbors its last call found that the side had not seen before.
 3. Stop as soon as a word is on both sides, trace each half back through the
    word whose list named it, and submit. The agent is told not to look for a
    shorter ladder or re-check.
 4. If a side has no new words, its whole connected component has been seen
    without meeting the other side, so the puzzle is unsolvable.
 
-Expanding every newest word, not a few, is what makes this breadth-first: after
-call *k* each side knows every word within *k* steps of its end, so the first
-meeting gives a shortest ladder. In general one meeting can still be a word
-longer than another found in the same call, so the generator keeps only puzzles
-where every word on both sides at the meeting gives a shortest ladder. That is
-what lets the agent submit the first meeting it sees. `two_sided_search` in
-`src/plugin/generate_puzzles.py` is this procedure exactly. The generator and the
+Expanding every newest word of a side, not a few, is what makes this
+breadth-first: each side always knows every word within its depth, so the first
+meeting gives a shortest ladder. Growing one side per call also means that every
+word a call puts on both sides gives a ladder of the same length. That is what
+lets the agent submit the first meeting it sees without re-checking.
+`Search.problem` still checks it for every pair, and refuses a pair where it
+fails. An earlier version expanded both sides in every call. That doubled the
+call sizes (dune -> node needed 30 words in its second call, now 14), and its
+calls could find a 4-word and a 5-word ladder at once, so most 4-word pairs had
+to be refused. `two_sided_search` in
+`src/plugin/search.py` is this procedure exactly. The generator and the
 tests use it to check each live puzzle, and the gold scripted cases follow its
 calls.
 
@@ -95,9 +101,8 @@ searched in its head, spent its whole 2048-token response and never submitted.
 Now:
 
 - **Short responses.** The tool does the lookups, so each step's reasoning is
-  only "which words are new, did the sides meet". The live puzzles keep that
-  small: at most 2 `neighbors` calls of at most 12 words, and at most 111
-  words of results in all.
+  only "which words are new, did the sides meet". Live puzzles need at most
+  2 `neighbors` calls.
 - **Nothing to re-check.** An earlier version had 5- and 6-word puzzles. On
   isle -> ells, the hosted agent found the right ladder after a 24-word third
   call, then spent the rest of its 2048-token response proving nothing shorter
@@ -106,14 +111,15 @@ Now:
 - **Steps.** NanoAgent makes step 6 a forced final answer, so the tool calls fit
   in steps 1 to 5: at most 4 `neighbors` calls plus `submit`. Live puzzles use
   1 or 2 calls, which leaves room for a refused or repeated call.
-- **Words per call.** The tool takes up to 25 words. The live puzzles never
-  need more than 12.
+- **Words per call.** There is no limit. Expanding the smaller side keeps calls
+  small anyway: the largest frozen puzzle's second call has 17 words.
 - **Tokens.** NanoAgent re-sends the whole transcript every step, so a tool
   result costs its size again on every later request. The generator estimates
   that re-sent total at 3 characters of JSON per token, and it must stay under
-  20,000 tokens. The largest live puzzle comes to about 900.
+  20,000 tokens. The largest frozen puzzle comes to about 2,500.
 
-`src/plugin/search.py` holds the check (`two_sided_search` and `Search.live`).
+`src/plugin/search.py` holds the check (`two_sided_search`, and `Search.problem`,
+which names the reason a pair is refused).
 `pin_puzzle` applies it to every pair it is asked about, and the generator
 applies it to the puzzles it freezes, which it samples with a fixed seed. Longer
 puzzles, such as `cold -> warm` (5 words), are refused, and appear only as
@@ -135,15 +141,15 @@ estimated re-sent tokens.
 | sods | rows | 3 | 1 | 2 | 43 | 272 |
 | duke | joke | 3 | 1 | 2 | 26 | 182 |
 | brin | bree | 3 | 1 | 2 | 22 | 160 |
-| eaux | fawn | 4 | 2 | 2, 9 | 105 | 813 |
-| unto | unai | 4 | 2 | 2, 6 | 33 | 371 |
-| inch | each | 4 | 2 | 2, 6 | 49 | 457 |
-| thou | thio | 4 | 2 | 2, 6 | 50 | 463 |
-| iwis | obit | 4 | 2 | 2, 6 | 37 | 393 |
-| azon | alae | 4 | 2 | 2, 12 | 111 | 903 |
-| ouds | jeux | no ladder (`jeux` has no neighbors) | 1 | 2 | 13 | 114 |
-| aqua | towy | no ladder (`aqua` has no neighbors) | 1 | 2 | 9 | 92 |
-| onyx | tier | no ladder (`onyx` is in a 2-word component: onyx, oryx) | 2 | 2, 9 | 95 | 761 |
+| ukes | ewer | 4 | 2 | 2, 3 | 40 | 359 |
+| carp | gain | 4 | 2 | 2, 13 | 269 | 1,803 |
+| fins | pubs | 4 | 2 | 2, 17 | 381 | 2,515 |
+| clam | plew | 4 | 2 | 2, 9 | 108 | 858 |
+| aper | eves | 4 | 2 | 2, 5 | 61 | 524 |
+| baby | gaps | 4 | 2 | 2, 4 | 63 | 563 |
+| blaw | epha | no ladder (`epha` has no neighbors) | 1 | 2 | 13 | 114 |
+| aqua | hurl | no ladder (`aqua` has no neighbors) | 1 | 2 | 11 | 102 |
+| snye | souk | no ladder (`snye` is in a 2-word component: snye, stye) | 2 | 2, 1 | 13 | 189 |
 
 ### Verifier
 

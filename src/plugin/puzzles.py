@@ -1,8 +1,8 @@
 """The frozen puzzles (data/puzzles.json, made once by generate_puzzles.py) and the task's answer key.
 
 pin_puzzle answers any pair of dictionary words whose search fits the hosted limits (plugin.search's live), not
-only the frozen ones: every pair with a 3-word ladder, a 4-word ladder whose search stays small, or no ladder when
-a side runs out of words quickly. It refuses any other pair with the reason, before the agent starts.
+only the frozen ones: every pair with a 3-word ladder, a 4-word ladder whose search never meets on a longer one
+first, or no ladder when a side runs out of words quickly. It refuses any other pair with the reason, before the agent starts.
 """
 
 from __future__ import annotations
@@ -12,7 +12,7 @@ from pathlib import Path
 
 from contract import LadderInput, PuzzleOutput
 from plugin.dictionary import DATA, WORDS, distances
-from plugin.search import LIVE_CALL_WORDS, LIVE_CALLS, two_sided_search
+from plugin.search import two_sided_search
 
 PUZZLES = DATA / "puzzles.json"
 
@@ -39,11 +39,7 @@ def answer_key(start: str, end: str) -> PuzzleOutput:
     steps = distances(start).get(end)
     if steps == 1:
         raise ValueError(f"{start} and {end} differ in one letter: a puzzle needs at least one word between them")
-    if not two_sided_search(start, end).live():
-        size = "no ladder" if steps is None else f"a shortest ladder of {steps + 1} words"
-        raise ValueError(
-            f"{start} -> {end} ({size}) needs a bigger search than the hosted agent can finish: try a pair with a "
-            f"3-word ladder, or a 4-word one whose search takes at most {LIVE_CALLS} neighbors calls of at most "
-            f"{LIVE_CALL_WORDS} words"
-        )
+    problem = two_sided_search(start, end).problem()
+    if problem:
+        raise ValueError(f"{start} -> {end} is not a puzzle the hosted agent can finish: {problem}")
     return PuzzleOutput(start=start, end=end, solvable=steps is not None, optimal_length=None if steps is None else steps + 1)

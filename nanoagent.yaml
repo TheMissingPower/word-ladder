@@ -1,7 +1,7 @@
 _ > nanoagent.plugin.v0001.ManifestConfig:
 id: word-ladder
 name: Word Ladder
-version: 0.5.0
+version: 0.6.0
 status: ready
 spec: nanoagent.plugin/v0001
 
@@ -22,7 +22,7 @@ tools > dict[contract.Tool, nanoagent.plugin.v0001.ToolConfig]:
   pin_puzzle:
     description: Pin a puzzle's answer key, whether it has a ladder and the number of words in a shortest one; any pair of dictionary words whose search fits the hosted limits, refusing others with the reason
   neighbors:
-    description: For each of up to 25 dictionary words, give every dictionary word one letter different from it, in alphabetical order
+    description: For each of any number of dictionary words, give every dictionary word one letter different from it, in alphabetical order
 
 # One entry per contract.Task; its input class is contract.TASKS's.
 tasks > dict[contract.Task, nanoagent.plugin.v0001.TaskConfig]:
@@ -45,7 +45,7 @@ tasks > dict[contract.Task, nanoagent.plugin.v0001.TaskConfig]:
       The dictionary is the 4-letter words of the ENABLE word list. ENABLE holds many uncommon words; neighbors and is_word are the only authority on what is a word.
       Method:
       - Do not search for ladders in your head. Use the neighbors tool.
-      - Search from both ends: call neighbors on the start and end words together, then on the newest words from each side, until a word appears on both sides.
+      - Search from both ends: call neighbors on the start and end words together. After that, each call expands one side only: the side with fewer newest words (the start side on a tie), and every one of its newest words. Continue until a word appears on both sides.
       - Expand every newest word on a side, not just a few, so the ladder you find is guaranteed shortest. A side's newest words are the neighbors its last call found that the side had not seen before.
       - As soon as any word is on both sides, stop: the ladder through it is a shortest one. Do not look for a shorter ladder or re-check it.
       - Build the ladder by tracing each word back to the word whose neighbors listed it, on each side.

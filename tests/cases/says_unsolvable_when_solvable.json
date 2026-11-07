@@ -2,16 +2,16 @@
  "note": "The search meets, but the puzzle is reported unsolvable.",
  "task": "solve-ladder",
  "arguments": {
-  "start": "eaux",
-  "end": "fawn"
+  "start": "ukes",
+  "end": "ewer"
  },
  "steps": [
   {
    "tool": "neighbors",
    "arguments": {
     "words": [
-     "eaux",
-     "fawn"
+     "ukes",
+     "ewer"
     ]
    }
   },
@@ -19,15 +19,9 @@
    "tool": "neighbors",
    "arguments": {
     "words": [
-     "faux",
-     "dawn",
-     "fain",
-     "faun",
-     "lawn",
-     "mawn",
-     "pawn",
-     "sawn",
-     "yawn"
+     "ekes",
+     "okes",
+     "uses"
     ]
    }
   },

@@ -18,7 +18,6 @@ import random
 import textwrap
 from pathlib import Path
 
-from contract import MAX_NEIGHBOR_WORDS
 from plugin.dictionary import WORDS, distances, neighbors
 from plugin.puzzles import PUZZLES
 from plugin.search import UNSOLVABLE_CALLS, two_sided_search
@@ -137,7 +136,6 @@ def cases(frozen: list[dict]) -> dict[str, dict]:
         return {"solvable": True, "ladder": two_sided_search(puzzle["start"], puzzle["end"]).ladder}
 
     four, three, isolated, component = first["length4"], first["length3"], first["isolated"], first["component"]
-    too_many = sorted(WORDS)[: MAX_NEIGHBOR_WORDS + 1]
     passed = {"valid": True, "score_min": 1.0}
     failed = {"valid": False, "score_max": 0.0}
     invented = [isolated["start"], neighbors(isolated["start"])[0], isolated["end"]]
@@ -171,9 +169,9 @@ def cases(frozen: list[dict]) -> dict[str, dict]:
             "The search meets, but the puzzle is reported unsolvable.", four, calls(four),
             {"solvable": False, "ladder": []}, {**failed, "message_contains": "says none does"},
         ),
-        "too_many_words": case(
-            "A 26-word neighbors call is refused, then the prescribed search and its ladder.", three,
-            [{"tool": "neighbors", "arguments": {"words": too_many}, "expect_error": True}] + calls(three),
+        "refused_unknown_word": case(
+            "A neighbors call with a word not in the dictionary is refused, then the prescribed search and its ladder.",
+            three, [{"tool": "neighbors", "arguments": {"words": ["zake"]}, "expect_error": True}] + calls(three),
             gold(three), {**passed, "message_contains": "a valid shortest ladder of 3 words"},
         ),
     }

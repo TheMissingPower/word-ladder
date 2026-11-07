@@ -2,16 +2,16 @@
  "note": "The search shows no ladder, but a ladder is invented anyway.",
  "task": "solve-ladder",
  "arguments": {
-  "start": "ouds",
-  "end": "jeux"
+  "start": "blaw",
+  "end": "epha"
  },
  "steps": [
   {
    "tool": "neighbors",
    "arguments": {
     "words": [
-     "ouds",
-     "jeux"
+     "blaw",
+     "epha"
     ]
    }
   },
@@ -20,9 +20,9 @@
    "arguments": {
     "solvable": true,
     "ladder": [
-     "ouds",
-     "buds",
-     "jeux"
+     "blaw",
+     "blab",
+     "epha"
     ]
    }
   }

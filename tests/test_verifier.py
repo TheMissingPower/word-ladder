@@ -187,15 +187,15 @@ def test_checks_neighbors_calls() -> None:
 @pytest.mark.parametrize(
     ("words", "reason"),
     [
-        (sorted(WORDS)[:26], "at most 25 words per call, got 26"),
         ([], "at least 1 word"),
         (["cold", "zake"], "'zake' is not in the dictionary"),
         (["colder"], "does not have 4 letters"),
         (["Cold"], "not lowercase ASCII letters"),
     ],
-    ids=["26-words", "empty", "unknown", "wrong-length", "uppercase"],
+    ids=["empty", "unknown", "wrong-length", "uppercase"],
 )
 def test_refuses_a_neighbors_call_out_of_bounds(words, reason) -> None:
     result = verifier.verify_input("neighbors", build_output({"words": words}, NeighborsInput))
     assert result["valid"] is False and reason in result["message"]
-    assert verifier.verify_input("neighbors", build_output({"words": sorted(WORDS)[:25]}, NeighborsInput))["valid"]
+    # No limit on the words in one call: the whole dictionary is a valid call.
+    assert verifier.verify_input("neighbors", build_output({"words": sorted(WORDS)}, NeighborsInput))["valid"]

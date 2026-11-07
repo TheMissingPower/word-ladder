@@ -36,56 +36,56 @@
     "optimal_length": 3
   },
   {
-    "start": "eaux",
-    "end": "fawn",
+    "start": "ukes",
+    "end": "ewer",
     "solvable": true,
     "optimal_length": 4
   },
   {
-    "start": "unto",
-    "end": "unai",
+    "start": "carp",
+    "end": "gain",
     "solvable": true,
     "optimal_length": 4
   },
   {
-    "start": "inch",
-    "end": "each",
+    "start": "fins",
+    "end": "pubs",
     "solvable": true,
     "optimal_length": 4
   },
   {
-    "start": "thou",
-    "end": "thio",
+    "start": "clam",
+    "end": "plew",
     "solvable": true,
     "optimal_length": 4
   },
   {
-    "start": "iwis",
-    "end": "obit",
+    "start": "aper",
+    "end": "eves",
     "solvable": true,
     "optimal_length": 4
   },
   {
-    "start": "azon",
-    "end": "alae",
+    "start": "baby",
+    "end": "gaps",
     "solvable": true,
     "optimal_length": 4
   },
   {
-    "start": "ouds",
-    "end": "jeux",
+    "start": "blaw",
+    "end": "epha",
     "solvable": false,
     "optimal_length": null
   },
   {
     "start": "aqua",
-    "end": "towy",
+    "end": "hurl",
     "solvable": false,
     "optimal_length": null
   },
   {
-    "start": "onyx",
-    "end": "tier",
+    "start": "snye",
+    "end": "souk",
     "solvable": false,
     "optimal_length": null
   }

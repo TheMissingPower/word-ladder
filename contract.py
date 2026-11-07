@@ -19,8 +19,6 @@ class Task(Enum):
 
 START = "The start word: 4 lowercase ASCII letters, e.g. cold"
 END = "The end word: 4 lowercase ASCII letters, e.g. warm"
-# The most words one neighbors call takes.
-MAX_NEIGHBOR_WORDS = 25
 
 
 @dataclass
@@ -51,7 +49,7 @@ class IsWordOutput(Output):
 
 @dataclass
 class NeighborsInput(Output):
-    words: Annotated[list[str], "1 to 25 dictionary words to expand, e.g. [\"cold\", \"warm\"]"]
+    words: Annotated[list[str], "Dictionary words to expand, at least 1, e.g. [\"cold\", \"warm\"]"]
 
 
 @dataclass

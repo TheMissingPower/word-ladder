@@ -9,12 +9,12 @@ from pathlib import Path
 import pytest
 
 import verifier.words
-from contract import MAX_NEIGHBOR_WORDS, IsWordInput, LadderInput, NeighborsInput
+from contract import IsWordInput, LadderInput, NeighborsInput
 from plugin import is_word, neighbors, pin_puzzle
 from plugin.dictionary import ENABLE, WORDS, distances
 from plugin.generate_puzzles import CASES, SEED, VERIFIER_WORDS, cases, puzzles, words_module
 from plugin.puzzles import PUZZLES, load_puzzles
-from plugin.search import LIVE_CALL_WORDS, LIVE_CALLS, MAX_CALLS, TOKEN_BUDGET, UNSOLVABLE_CALLS, two_sided_search
+from plugin.search import LIVE_CALLS, LIVE_LADDER_WORDS, MAX_CALLS, TOKEN_BUDGET, UNSOLVABLE_CALLS, two_sided_search
 
 # sha256 of enable1.txt as published at github.com/dolph/dictionary (172,823 words, LF line endings).
 ENABLE_SHA256 = "3f16130220645692ed49c7134e24a18504c2ca55b3c012f7290e3e77c63b1a89"
@@ -65,10 +65,9 @@ def test_the_puzzle_mix() -> None:
 def test_the_prescribed_search_fits_the_hosted_budget(puzzle) -> None:
     search = two_sided_search(puzzle.start, puzzle.end)
     assert len(search.calls) <= MAX_CALLS, "4 neighbors calls, then submit (step 5) and the forced answer (step 6)"
-    assert all(len(call) <= MAX_NEIGHBOR_WORDS for call in search.calls)
     assert search.tokens < TOKEN_BUDGET
     # Room to spare: short searches with small calls, so no step has much to read.
-    assert len(search.calls) <= LIVE_CALLS and all(len(call) <= LIVE_CALL_WORDS for call in search.calls)
+    assert len(search.calls) <= LIVE_CALLS and (not puzzle.solvable or puzzle.optimal_length <= LIVE_LADDER_WORDS)
     if puzzle.solvable:
         assert search.outcome == "meet" and len(search.ladder) == puzzle.optimal_length
         # Every word on both sides at the meeting gives a shortest ladder: the agent may submit the first it sees.
@@ -83,26 +82,23 @@ def test_the_prescribed_search_fits_the_hosted_budget(puzzle) -> None:
 def test_neighbors_are_exactly_the_one_letter_dictionary_words(tmp_path: Path) -> None:
     live_words = {word for puzzle in LIVE for word in (puzzle.start, puzzle.end)}
     sample = sorted(live_words | set(random.Random(0).sample(sorted(WORDS), 40)))
-    for first in range(0, len(sample), MAX_NEIGHBOR_WORDS):
-        asked = sample[first : first + MAX_NEIGHBOR_WORDS]
-        output = neighbors(NeighborsInput(words=asked), tmp_path)
-        assert [entry.word for entry in output.results] == asked
-        for entry in output.results:
-            assert entry.neighbors == brute_force(entry.word)
+    output = neighbors(NeighborsInput(words=sample), tmp_path)  # one call: there is no limit on its words
+    assert [entry.word for entry in output.results] == sample
+    for entry in output.results:
+        assert entry.neighbors == brute_force(entry.word)
     assert neighbors_of("djin") == []
 
 
 @pytest.mark.parametrize(
     ("words", "reason"),
     [
-        (sorted(WORDS)[:26], "at most 25 words per call, got 26"),
         ([], "at least 1 word"),
         (["cold", "zake"], "'zake' is not in the dictionary"),
         (["colder"], "not 4 lowercase ASCII letters"),
         (["col"], "not 4 lowercase ASCII letters"),
         (["Cold"], "not 4 lowercase ASCII letters"),
     ],
-    ids=["26-words", "empty", "unknown", "too-long", "too-short", "uppercase"],
+    ids=["empty", "unknown", "too-long", "too-short", "uppercase"],
 )
 def test_neighbors_refuses_a_call_out_of_bounds(words, reason, tmp_path: Path) -> None:
     with pytest.raises(ValueError, match=reason):
@@ -123,8 +119,14 @@ def test_pin_puzzle_pins_the_frozen_puzzles(tmp_path: Path) -> None:
 
 @pytest.mark.parametrize(
     ("start", "end", "solvable", "optimal_length"),
-    [("cold", "bolt", True, 3), ("cold", "gild", True, 3), ("kilt", "djin", False, None)],
-    ids=["3-words", "3-words-two-changes", "isolated-end"],
+    [
+        ("cold", "bolt", True, 3),
+        ("cold", "gild", True, 3),
+        ("dune", "node", True, 4),
+        ("love", "hate", True, 4),
+        ("kilt", "djin", False, None),
+    ],
+    ids=["3-words", "3-words-two-changes", "4-words-dune-node", "4-words-love-hate", "isolated-end"],
 )
 def test_pin_puzzle_answers_a_live_pair_off_the_list(start, end, solvable, optimal_length, tmp_path: Path) -> None:
     assert (start, end) not in {(puzzle.start, puzzle.end) for puzzle in LIVE}
@@ -148,16 +150,33 @@ def test_pin_puzzle_answers_every_3_word_pair(tmp_path: Path) -> None:
             tried += 1
 
 
+def test_pin_puzzle_answers_4_word_pairs(tmp_path: Path) -> None:
+    # Expanding one side per call after the first, every meeting a call finds has the same length, so 4-word pairs
+    # fit too: a 100-pair sample, all accepted, each meeting on a single 4-word length.
+    rng = random.Random(2)
+    words = sorted(WORDS)
+    tried = 0
+    while tried < 100:
+        start = rng.choice(words)
+        ends = sorted(word for word, steps in distances(start).items() if steps == 3)
+        if ends:
+            end = rng.choice(ends)
+            assert set(two_sided_search(start, end).meeting_lengths) == {4}
+            pinned = pin_puzzle(LadderInput(start=start, end=end), tmp_path)
+            assert (pinned.solvable, pinned.optimal_length) == (True, 4)
+            tried += 1
+
+
 @pytest.mark.parametrize(
     ("start", "end", "reason"),
     [
-        ("cold", "warm", "cold -> warm (a shortest ladder of 5 words) needs a bigger search"),
-        ("love", "hate", "a shortest ladder of 4 words"),
+        ("cold", "warm", "its shortest ladder has 5 words, more than the 4"),
+        ("isle", "ells", "its shortest ladder has 6 words"),
         ("cold", "cord", "differ in one letter"),
         ("zake", "cold", "start 'zake' is not a 4-letter word in the dictionary"),
         ("cold", "cold", "start and end must differ"),
     ],
-    ids=["5-words", "wide-4-words", "adjacent", "unknown", "same"],
+    ids=["5-words", "6-words", "adjacent", "unknown", "same"],
 )
 def test_pin_puzzle_refuses_a_pair_the_hosted_agent_cannot_finish(start, end, reason, tmp_path: Path) -> None:
     with pytest.raises(ValueError, match=reason.replace("(", r"\(").replace(")", r"\)")):

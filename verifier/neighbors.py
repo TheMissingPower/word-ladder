@@ -1,6 +1,4 @@
-"""neighbors' checks: at most 25 dictionary words in, and out each one's exact one-letter neighbors, in order."""
-
-from contract import MAX_NEIGHBOR_WORDS
+"""neighbors' checks: dictionary words in, and out each one's exact one-letter neighbors, in order."""
 
 from .checks import result, word_problem
 from .words import WORDS
@@ -16,10 +14,6 @@ def one_letter_neighbors(word):
 def verify_input(value):
     if not value.words:
         return result(False, "neighbors needs at least 1 word")
-    if len(value.words) > MAX_NEIGHBOR_WORDS:
-        return result(
-            False, f"neighbors takes at most {MAX_NEIGHBOR_WORDS} words per call, got {len(value.words)}: split the call"
-        )
     for index, word in enumerate(value.words):
         problem = word_problem(word, f"word {index + 1}")
         if problem:
