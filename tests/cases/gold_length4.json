@@ -2,16 +2,16 @@
  "note": "The prescribed search on a 4-word puzzle, then its ladder.",
  "task": "solve-ladder",
  "arguments": {
-  "start": "sods",
-  "end": "qoph"
+  "start": "eaux",
+  "end": "fawn"
  },
  "steps": [
   {
    "tool": "neighbors",
    "arguments": {
     "words": [
-     "sods",
-     "qoph"
+     "eaux",
+     "fawn"
     ]
    }
   },
@@ -19,29 +19,15 @@
    "tool": "neighbors",
    "arguments": {
     "words": [
-     "bods",
-     "cods",
-     "gods",
-     "hods",
-     "mods",
-     "nods",
-     "pods",
-     "rods",
-     "sobs",
-     "soda",
-     "sols",
-     "sons",
-     "sops",
-     "sots",
-     "sous",
-     "sows",
-     "soys",
-     "suds",
-     "tods",
-     "yods",
-     "koph",
-     "soph",
-     "toph"
+     "faux",
+     "dawn",
+     "fain",
+     "faun",
+     "lawn",
+     "mawn",
+     "pawn",
+     "sawn",
+     "yawn"
     ]
    }
   },
@@ -50,10 +36,10 @@
    "arguments": {
     "solvable": true,
     "ladder": [
-     "sods",
-     "sops",
-     "soph",
-     "qoph"
+     "eaux",
+     "faux",
+     "faun",
+     "fawn"
     ]
    }
   }

@@ -2,16 +2,16 @@
  "note": "The start word sits in a small component: its side runs out first.",
  "task": "solve-ladder",
  "arguments": {
-  "start": "idyl",
-  "end": "moly"
+  "start": "onyx",
+  "end": "tier"
  },
  "steps": [
   {
    "tool": "neighbors",
    "arguments": {
     "words": [
-     "idyl",
-     "moly"
+     "onyx",
+     "tier"
     ]
    }
   },
@@ -19,19 +19,15 @@
    "tool": "neighbors",
    "arguments": {
     "words": [
-     "idol",
-     "odyl",
-     "coly",
-     "holy",
-     "mola",
-     "mold",
-     "mole",
-     "moll",
-     "mols",
-     "molt",
-     "mony",
-     "mopy",
-     "poly"
+     "oryx",
+     "bier",
+     "kier",
+     "lier",
+     "pier",
+     "tied",
+     "ties",
+     "tyer",
+     "vier"
     ]
    }
   },

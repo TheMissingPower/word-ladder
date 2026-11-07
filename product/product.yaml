@@ -6,6 +6,6 @@ highlights:
   - "Every step, word and length is checked against the dictionary by plain code"
   - "Includes puzzles with no ladder, so guessing a ladder is caught"
 steps:
-  - "Ask for one of the 15 puzzles, such as a ladder from isle to ells"
+  - "Ask for one of the 15 puzzles, such as a ladder from inch to each"
   - "The agent searches from both ends with neighbors and submits its ladder"
   - "The verifier checks the ladder against the rules and the shortest length"

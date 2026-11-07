@@ -2,16 +2,16 @@
  "note": "The search, then a valid ladder longer than the shortest.",
  "task": "solve-ladder",
  "arguments": {
-  "start": "isle",
-  "end": "ells"
+  "start": "eaux",
+  "end": "fawn"
  },
  "steps": [
   {
    "tool": "neighbors",
    "arguments": {
     "words": [
-     "isle",
-     "ells"
+     "eaux",
+     "fawn"
     ]
    }
   },
@@ -19,44 +19,15 @@
    "tool": "neighbors",
    "arguments": {
     "words": [
-     "idle",
-     "alls",
-     "eels",
-     "elds",
-     "elks",
-     "elms",
-     "ills"
-    ]
-   }
-  },
-  {
-   "tool": "neighbors",
-   "arguments": {
-    "words": [
-     "idly",
-     "aals",
-     "ails",
-     "alas",
-     "albs",
-     "ales",
-     "ally",
-     "alms",
-     "alps",
-     "alts",
-     "awls",
-     "bels",
-     "cels",
-     "dels",
-     "eely",
-     "elmy",
-     "ends",
-     "gels",
-     "ilks",
-     "illy",
-     "mels",
-     "olds",
-     "sels",
-     "tels"
+     "faux",
+     "dawn",
+     "fain",
+     "faun",
+     "lawn",
+     "mawn",
+     "pawn",
+     "sawn",
+     "yawn"
     ]
    }
   },
@@ -65,13 +36,11 @@
    "arguments": {
     "solvable": true,
     "ladder": [
-     "isle",
-     "idle",
-     "idly",
-     "illy",
-     "ally",
-     "alls",
-     "ells"
+     "eaux",
+     "faux",
+     "faun",
+     "fain",
+     "fawn"
     ]
    }
   }

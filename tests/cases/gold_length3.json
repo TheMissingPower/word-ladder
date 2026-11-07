@@ -1,0 +1,36 @@
+{
+ "note": "The prescribed search on a 3-word puzzle, then its ladder.",
+ "task": "solve-ladder",
+ "arguments": {
+  "start": "jaws",
+  "end": "vars"
+ },
+ "steps": [
+  {
+   "tool": "neighbors",
+   "arguments": {
+    "words": [
+     "jaws",
+     "vars"
+    ]
+   }
+  },
+  {
+   "tool": "submit",
+   "arguments": {
+    "solvable": true,
+    "ladder": [
+     "jaws",
+     "jars",
+     "vars"
+    ]
+   }
+  }
+ ],
+ "answer": "Submitted.",
+ "expect": {
+  "valid": true,
+  "score_min": 1.0,
+  "message_contains": "a valid shortest ladder of 3 words"
+ }
+}

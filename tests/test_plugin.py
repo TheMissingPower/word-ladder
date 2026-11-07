@@ -14,6 +14,8 @@ from plugin import is_word, neighbors, pin_puzzle
 from plugin.dictionary import ENABLE, WORDS, distances
 from plugin.generate_puzzles import (
     CASES,
+    LIVE_CALL_WORDS,
+    LIVE_CALLS,
     MAX_CALLS,
     SEED,
     TOKEN_BUDGET,
@@ -67,7 +69,7 @@ def test_the_frozen_files_are_what_the_generator_makes() -> None:
 def test_the_puzzle_mix() -> None:
     lengths = sorted(puzzle.optimal_length for puzzle in LIVE if puzzle.solvable)
     assert len(LIVE) == 15 and len({(puzzle.start, puzzle.end) for puzzle in LIVE}) == 15
-    assert lengths == [3] * 3 + [4] * 3 + [5] * 3 + [6] * 3
+    assert lengths == [3] * 6 + [4] * 6
     assert sum(not puzzle.solvable for puzzle in LIVE) == 3
 
 
@@ -77,8 +79,12 @@ def test_the_prescribed_search_fits_the_hosted_budget(puzzle) -> None:
     assert len(search.calls) <= MAX_CALLS, "4 neighbors calls, then submit (step 5) and the forced answer (step 6)"
     assert all(len(call) <= MAX_NEIGHBOR_WORDS for call in search.calls)
     assert search.tokens < TOKEN_BUDGET
+    # Room to spare: short searches with small calls, so no step has much to read.
+    assert len(search.calls) <= LIVE_CALLS and all(len(call) <= LIVE_CALL_WORDS for call in search.calls)
     if puzzle.solvable:
         assert search.outcome == "meet" and len(search.ladder) == puzzle.optimal_length
+        # Every word on both sides at the meeting gives a shortest ladder: the agent may submit the first it sees.
+        assert set(search.meeting_lengths) == {puzzle.optimal_length}
         ladder = search.ladder
         assert ladder[0] == puzzle.start and ladder[-1] == puzzle.end and len(set(ladder)) == len(ladder)
         assert all(after in neighbors_of(before) for before, after in pairwise(ladder))

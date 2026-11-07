@@ -19,73 +19,73 @@
   },
   {
     "start": "sods",
-    "end": "qoph",
+    "end": "rows",
+    "solvable": true,
+    "optimal_length": 3
+  },
+  {
+    "start": "duke",
+    "end": "joke",
+    "solvable": true,
+    "optimal_length": 3
+  },
+  {
+    "start": "brin",
+    "end": "bree",
+    "solvable": true,
+    "optimal_length": 3
+  },
+  {
+    "start": "eaux",
+    "end": "fawn",
     "solvable": true,
     "optimal_length": 4
   },
   {
-    "start": "gley",
-    "end": "blet",
+    "start": "unto",
+    "end": "unai",
     "solvable": true,
     "optimal_length": 4
   },
   {
-    "start": "door",
-    "end": "tout",
+    "start": "inch",
+    "end": "each",
     "solvable": true,
     "optimal_length": 4
   },
   {
-    "start": "carp",
-    "end": "guls",
+    "start": "thou",
+    "end": "thio",
     "solvable": true,
-    "optimal_length": 5
+    "optimal_length": 4
   },
   {
-    "start": "clam",
-    "end": "heat",
+    "start": "iwis",
+    "end": "obit",
     "solvable": true,
-    "optimal_length": 5
+    "optimal_length": 4
   },
   {
-    "start": "aper",
-    "end": "knew",
+    "start": "azon",
+    "end": "alae",
     "solvable": true,
-    "optimal_length": 5
+    "optimal_length": 4
   },
   {
-    "start": "isle",
-    "end": "ells",
-    "solvable": true,
-    "optimal_length": 6
-  },
-  {
-    "start": "emir",
-    "end": "abos",
-    "solvable": true,
-    "optimal_length": 6
-  },
-  {
-    "start": "eddy",
-    "end": "ends",
-    "solvable": true,
-    "optimal_length": 6
-  },
-  {
-    "start": "lies",
+    "start": "ouds",
     "end": "jeux",
     "solvable": false,
     "optimal_length": null
   },
   {
-    "start": "epee",
-    "end": "durn",
+    "start": "aqua",
+    "end": "towy",
     "solvable": false,
     "optimal_length": null
   },
   {
-    "start": "idyl",
-    "end": "moly",
+    "start": "onyx",
+    "end": "tier",
     "solvable": false,
     "optimal_length": null
   }

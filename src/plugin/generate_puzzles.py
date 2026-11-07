@@ -7,9 +7,11 @@ simulated search (the README's table). All are committed; nothing regenerates th
 and the same seed and dictionary always give the same files.
 
 A puzzle is live only if the search the task's instructions prescribe (two_sided_search) fits RUSH Lab's hosted
-limits: at most MAX_CALLS neighbors calls (with submit, 5 tool steps; the 6th step must answer), at most
-MAX_NEIGHBOR_WORDS words per call, and a small token cost for the tool results, which every later request
-re-sends.
+limits with room to spare: at most LIVE_CALLS neighbors calls (the hard limit is MAX_CALLS: with submit, 5 tool
+steps, as the 6th step must answer), at most LIVE_CALL_WORDS words per call, a small token cost for the tool
+results (which every later request re-sends), and a meeting that leaves nothing to check: every word on both
+sides gives a shortest ladder, so the agent can submit the first one it sees. Longer ladders (5 and 6 words, or
+calls of 20+ words) made the hosted agent spend its 2048-token response re-checking the answer and never submit.
 """
 
 from __future__ import annotations
@@ -27,8 +29,10 @@ from plugin.puzzles import PUZZLES
 
 SEED = 480
 # Optimal lengths (words, both ends included) of the solvable live puzzles.
-LENGTHS = [3] * 3 + [4] * 3 + [5] * 3 + [6] * 3
+LENGTHS = [3] * 6 + [4] * 6
 MAX_CALLS = 4  # neighbors calls; then submit (step 5) and the forced answer (step 6)
+LIVE_CALLS = 2  # a live puzzle's search needs at most this many calls
+LIVE_CALL_WORDS = 12  # and at most this many words in any call, so each step has little to read
 UNSOLVABLE_CALLS = 2  # an unsolvable puzzle's search runs out of words within this many calls
 TOKEN_BUDGET = 20_000  # estimated tokens of tool results over the whole run, re-sends included
 CHARS_PER_TOKEN = 3  # conservative for JSON lists of 4-letter words
@@ -48,6 +52,7 @@ class Search:
     ladder: list[str] = field(default_factory=list)  # a shortest ladder, as the search finds it, when met
     output_chars: list[int] = field(default_factory=list)  # each call's result, as compact JSON
     output_words: int = 0  # every word in every result: each asked word and its neighbors
+    meeting_lengths: list[int] = field(default_factory=list)  # the ladder length through each word on both sides
 
     @property
     def tokens(self) -> int:
@@ -62,6 +67,15 @@ class Search:
             and len(self.calls) <= MAX_CALLS
             and max(map(len, self.calls)) <= MAX_NEIGHBOR_WORDS
             and self.tokens < TOKEN_BUDGET
+        )
+
+    def live(self) -> bool:
+        """Fits with room to spare, and any meeting the agent sees is a shortest ladder."""
+        return (
+            self.fits()
+            and len(self.calls) <= LIVE_CALLS
+            and max(map(len, self.calls)) <= LIVE_CALL_WORDS
+            and len(set(self.meeting_lengths)) <= 1
         )
 
 
@@ -92,6 +106,7 @@ def two_sided_search(start: str, end: str, max_calls: int = MAX_CALLS) -> Search
         search.output_words += sum(1 + len(result["neighbors"]) for result in results)
         met = [(depth["start"][word] + depth["end"][word], word) for word in depth["start"] if word in depth["end"]]
         if met:
+            search.meeting_lengths = sorted(steps + 1 for steps, _ in met)
             _, middle = min(met)
             search.outcome, search.ladder = "meet", trace(middle, parent["start"])[::-1] + trace(middle, parent["end"])[1:]
             return search
@@ -133,7 +148,7 @@ def puzzles(rng: random.Random) -> list[dict]:
             if not ends:
                 continue
             end = rng.choice(ends)
-            if (start, end) not in taken and two_sided_search(start, end).fits():
+            if (start, end) not in taken and two_sided_search(start, end).live():
                 break
         taken.add((start, end))
         chosen.append({"start": start, "end": end, "solvable": True, "optimal_length": length})
@@ -151,7 +166,7 @@ def unsolvable(pick) -> dict:
     while True:
         start, end = pick()
         search = two_sided_search(start, end)
-        if search.fits() and search.outcome == "dead" and len(search.calls) <= UNSOLVABLE_CALLS:
+        if search.live() and search.outcome == "dead" and len(search.calls) <= UNSOLVABLE_CALLS:
             return {"start": start, "end": end, "solvable": False, "optimal_length": None}
 
 
@@ -189,14 +204,15 @@ def cases(frozen: list[dict]) -> dict[str, dict]:
     """The scripted cases (tests/cases/<name>.json): the prescribed neighbors calls, then a submit, and the
     verdict the real verifier must give. tests/replay.py plays them through the real tools with no model."""
     first = {
-        "length6": next(puzzle for puzzle in frozen if puzzle["optimal_length"] == 6),
         "length4": next(puzzle for puzzle in frozen if puzzle["optimal_length"] == 4),
+        "length3": next(puzzle for puzzle in frozen if puzzle["optimal_length"] == 3),
         "isolated": next(puzzle for puzzle in frozen if not puzzle["solvable"]),
         "component": [puzzle for puzzle in frozen if not puzzle["solvable"]][-1],
     }
 
     def calls(puzzle: dict) -> list[dict]:
-        return [{"tool": "neighbors", "arguments": {"words": call}} for call in two_sided_search(puzzle["start"], puzzle["end"]).calls]
+        search = two_sided_search(puzzle["start"], puzzle["end"])
+        return [{"tool": "neighbors", "arguments": {"words": call}} for call in search.calls]
 
     def case(note: str, puzzle: dict, steps: list[dict], submit: dict, expect: dict) -> dict:
         return {
@@ -213,18 +229,46 @@ def cases(frozen: list[dict]) -> dict[str, dict]:
             return {"solvable": False, "ladder": []}
         return {"solvable": True, "ladder": two_sided_search(puzzle["start"], puzzle["end"]).ladder}
 
-    six, four, isolated, component = first["length6"], first["length4"], first["isolated"], first["component"]
+    four, three, isolated, component = first["length4"], first["length3"], first["isolated"], first["component"]
     too_many = sorted(WORDS)[: MAX_NEIGHBOR_WORDS + 1]
     passed = {"valid": True, "score_min": 1.0}
+    failed = {"valid": False, "score_max": 0.0}
+    invented = [isolated["start"], neighbors(isolated["start"])[0], isolated["end"]]
+    longer = {"solvable": True, "ladder": longer_ladder(four["start"], four["end"])}
     return {
-        "gold_length6": case("The prescribed search on a 6-word puzzle, then its ladder.", six, calls(six), gold(six), {**passed, "message_contains": "a valid shortest ladder of 6 words"}),
-        "gold_length4": case("The prescribed search on a 4-word puzzle, then its ladder.", four, calls(four), gold(four), {**passed, "message_contains": "a valid shortest ladder of 4 words"}),
-        "gold_unsolvable_isolated": case("The end word has no neighbors: the end side runs out in the first call.", isolated, calls(isolated), gold(isolated), {**passed, "message_contains": "correctly reports that no ladder"}),
-        "gold_unsolvable_component": case("The start word sits in a small component: its side runs out first.", component, calls(component), gold(component), {**passed, "message_contains": "correctly reports that no ladder"}),
-        "longer_ladder": case("The search, then a valid ladder longer than the shortest.", six, calls(six), {"solvable": True, "ladder": longer_ladder(six["start"], six["end"])}, {"valid": False, "score_max": 0.0, "message_contains": "not shortest"}),
-        "invented_ladder_unsolvable": case("The search shows no ladder, but a ladder is invented anyway.", isolated, calls(isolated), {"solvable": True, "ladder": [isolated["start"], neighbors(isolated["start"])[0], isolated["end"]]}, {"valid": False, "score_max": 0.0, "message_contains": "no ladder from"}),
-        "says_unsolvable_when_solvable": case("The search meets, but the puzzle is reported unsolvable.", six, calls(six), {"solvable": False, "ladder": []}, {"valid": False, "score_max": 0.0, "message_contains": "says none does"}),
-        "too_many_words": case("A 26-word neighbors call is refused, then the prescribed search and its ladder.", four, [{"tool": "neighbors", "arguments": {"words": too_many}, "expect_error": True}] + calls(four), gold(four), {**passed, "message_contains": "a valid shortest ladder of 4 words"}),
+        "gold_length4": case(
+            "The prescribed search on a 4-word puzzle, then its ladder.", four, calls(four), gold(four),
+            {**passed, "message_contains": "a valid shortest ladder of 4 words"},
+        ),
+        "gold_length3": case(
+            "The prescribed search on a 3-word puzzle, then its ladder.", three, calls(three), gold(three),
+            {**passed, "message_contains": "a valid shortest ladder of 3 words"},
+        ),
+        "gold_unsolvable_isolated": case(
+            "The end word has no neighbors: the end side runs out in the first call.", isolated, calls(isolated),
+            gold(isolated), {**passed, "message_contains": "correctly reports that no ladder"},
+        ),
+        "gold_unsolvable_component": case(
+            "The start word sits in a small component: its side runs out first.", component, calls(component),
+            gold(component), {**passed, "message_contains": "correctly reports that no ladder"},
+        ),
+        "longer_ladder": case(
+            "The search, then a valid ladder longer than the shortest.", four, calls(four), longer,
+            {**failed, "message_contains": "not shortest"},
+        ),
+        "invented_ladder_unsolvable": case(
+            "The search shows no ladder, but a ladder is invented anyway.", isolated, calls(isolated),
+            {"solvable": True, "ladder": invented}, {**failed, "message_contains": "no ladder from"},
+        ),
+        "says_unsolvable_when_solvable": case(
+            "The search meets, but the puzzle is reported unsolvable.", four, calls(four),
+            {"solvable": False, "ladder": []}, {**failed, "message_contains": "says none does"},
+        ),
+        "too_many_words": case(
+            "A 26-word neighbors call is refused, then the prescribed search and its ladder.", three,
+            [{"tool": "neighbors", "arguments": {"words": too_many}, "expect_error": True}] + calls(three),
+            gold(three), {**passed, "message_contains": "a valid shortest ladder of 3 words"},
+        ),
     }
 
 

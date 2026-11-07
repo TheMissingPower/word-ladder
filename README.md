@@ -59,16 +59,18 @@ two-sided breadth-first search to run with `neighbors`:
 1. Call `neighbors` on `[start, end]`.
 2. Each later call expands every *newest* word of both sides: the neighbors the
    side's last call found that the side had not seen before.
-3. Stop when a word is on both sides. A word expanded on one side that shows up
-   in the other side's new neighbors gives a ladder one word shorter than a word
-   new on both sides, so the agent prefers it. It traces each half back through
-   the word whose list named it.
+3. Stop as soon as a word is on both sides, trace each half back through the
+   word whose list named it, and submit. The agent is told not to look for a
+   shorter ladder or re-check.
 4. If a side has no new words, its whole connected component has been seen
    without meeting the other side, so the puzzle is unsolvable.
 
 Expanding every newest word, not a few, is what makes this breadth-first: after
 call *k* each side knows every word within *k* steps of its end, so the first
-meeting gives a shortest ladder. `two_sided_search` in
+meeting gives a shortest ladder. In general one meeting can still be a word
+longer than another found in the same call, so the generator keeps only puzzles
+where every word on both sides at the meeting gives a shortest ladder. That is
+what lets the agent submit the first meeting it sees. `two_sided_search` in
 `src/plugin/generate_puzzles.py` is this procedure exactly. The generator and the
 tests use it to check each live puzzle, and the gold scripted cases follow its
 calls.
@@ -82,27 +84,34 @@ searched in its head, spent its whole 2048-token response and never submitted.
 Now:
 
 - **Short responses.** The tool does the lookups, so each step's reasoning is
-  only "which words are new, did the sides meet": a few hundred tokens.
+  only "which words are new, did the sides meet". The live puzzles keep that
+  small: at most 2 `neighbors` calls of at most 12 words, and at most 111
+  words of results in all.
+- **Nothing to re-check.** An earlier version had 5- and 6-word puzzles. On
+  isle -> ells, the hosted agent found the right ladder after a 24-word third
+  call, then spent the rest of its 2048-token response proving nothing shorter
+  existed, and never submitted. Live ladders are now 3 or 4 words, and every
+  meeting is shortest, so the instructions can say to submit at once.
 - **Steps.** NanoAgent makes step 6 a forced final answer, so the tool calls fit
-  in steps 1 to 5: at most 4 `neighbors` calls plus `submit`. Every live puzzle
-  needs 1 to 3 calls, and every unsolvable one runs out within 2.
-- **Words per call.** No call in a live puzzle's search needs more than 25 words,
-  so the agent never has to split a frontier over two steps.
+  in steps 1 to 5: at most 4 `neighbors` calls plus `submit`. Live puzzles use
+  1 or 2 calls, which leaves room for a refused or repeated call.
+- **Words per call.** The tool takes up to 25 words. The live puzzles never
+  need more than 12.
 - **Tokens.** NanoAgent re-sends the whole transcript every step, so a tool
   result costs its size again on every later request. The generator estimates
-  that re-sent total at 3 characters of JSON per token and keeps it under 20,000
-  tokens per puzzle, well inside `token_limit`. The largest is about 3,000.
+  that re-sent total at 3 characters of JSON per token, and it must stay under
+  20,000 tokens. The largest live puzzle comes to about 900.
 
 The generator samples puzzles with a fixed seed and keeps only the ones whose
-search meets these limits. Longer or harder puzzles, such as `cold -> warm`,
-`sods -> rows` and `kilt -> djin`, appear only as verifier test data.
+search meets these limits. Longer or harder puzzles, such as `cold -> warm`
+(5 words) and `kilt -> djin`, appear only as verifier test data.
 
 ### Puzzles
 
-`src/plugin/data/puzzles.json` holds 15 puzzles: 12 with a ladder (three each of
-3, 4, 5 and 6 words) and 3 without. `optimal_length` counts the words in a
-shortest ladder, both ends included. The other columns are the simulated search:
-its `neighbors` calls, the words in each call, the words in all results, and the
+`src/plugin/data/puzzles.json` holds 15 puzzles: 12 with a ladder (six each of
+3 and 4 words) and 3 without. `optimal_length` counts the words in a shortest
+ladder, both ends included. The other columns are the simulated search: its
+`neighbors` calls, the words in each call, the words in all results, and the
 estimated re-sent tokens.
 
 | start | end | optimal_length | calls | words per call | output words | est. tokens (re-sent) |
@@ -110,18 +119,18 @@ estimated re-sent tokens.
 | jaws | vars | 3 | 1 | 2 | 40 | 256 |
 | vamp | lame | 3 | 1 | 2 | 32 | 214 |
 | mole | sone | 3 | 1 | 2 | 49 | 304 |
-| sods | qoph | 4 | 2 | 2, 23 | 467 | 3,014 |
-| gley | blet | 4 | 2 | 2, 12 | 134 | 1,027 |
-| door | tout | 4 | 2 | 2, 19 | 246 | 1,757 |
-| carp | guls | 5 | 2 | 2, 24 | 414 | 2,751 |
-| clam | heat | 5 | 2 | 2, 25 | 401 | 2,699 |
-| aper | knew | 5 | 2 | 2, 8 | 67 | 590 |
-| isle | ells | 6 | 3 | 2, 7, 24 | 325 | 2,591 |
-| emir | abos | 6 | 3 | 2, 7, 20 | 191 | 1,790 |
-| eddy | ends | 6 | 3 | 2, 5, 15 | 157 | 1,425 |
-| lies | jeux | no ladder (`jeux` has no neighbors) | 1 | 2 | 21 | 156 |
-| epee | durn | no ladder (`epee` has no neighbors) | 1 | 2 | 10 | 98 |
-| idyl | moly | no ladder (`idyl` is in a 3-word component) | 2 | 2, 13 | 206 | 1,427 |
+| sods | rows | 3 | 1 | 2 | 43 | 272 |
+| duke | joke | 3 | 1 | 2 | 26 | 182 |
+| brin | bree | 3 | 1 | 2 | 22 | 160 |
+| eaux | fawn | 4 | 2 | 2, 9 | 105 | 813 |
+| unto | unai | 4 | 2 | 2, 6 | 33 | 371 |
+| inch | each | 4 | 2 | 2, 6 | 49 | 457 |
+| thou | thio | 4 | 2 | 2, 6 | 50 | 463 |
+| iwis | obit | 4 | 2 | 2, 6 | 37 | 393 |
+| azon | alae | 4 | 2 | 2, 12 | 111 | 903 |
+| ouds | jeux | no ladder (`jeux` has no neighbors) | 1 | 2 | 13 | 114 |
+| aqua | towy | no ladder (`aqua` has no neighbors) | 1 | 2 | 9 | 92 |
+| onyx | tier | no ladder (`onyx` is in a 2-word component: onyx, oryx) | 2 | 2, 9 | 95 | 761 |
 
 ### Verifier
 
@@ -210,7 +219,7 @@ uv run python -m plugin.generate_puzzles
 ```
 
 To use the plugin, publish it on RUSH Lab, open it, and ask its chat for one of
-the puzzles, for example "Find a word ladder from isle to ells". The result card
+the puzzles, for example "Find a word ladder from inch to each". The result card
 shows the verifier's verdict.
 
 Publishing checks every plugin rule: push the plugin to a public GitHub

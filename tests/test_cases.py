@@ -21,7 +21,7 @@ def load(case_file: Path) -> dict:
 
 def test_there_are_gold_and_broken_cases() -> None:
     names = {case.stem for case in CASES}
-    assert {"gold_length6", "gold_length4", "gold_unsolvable_isolated", "gold_unsolvable_component"} <= names
+    assert {"gold_length4", "gold_length3", "gold_unsolvable_isolated", "gold_unsolvable_component"} <= names
     assert {"longer_ladder", "invented_ladder_unsolvable", "says_unsolvable_when_solvable", "too_many_words"} <= names
 
 

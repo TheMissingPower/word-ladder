@@ -2,7 +2,7 @@
  "note": "The search shows no ladder, but a ladder is invented anyway.",
  "task": "solve-ladder",
  "arguments": {
-  "start": "lies",
+  "start": "ouds",
   "end": "jeux"
  },
  "steps": [
@@ -10,7 +10,7 @@
    "tool": "neighbors",
    "arguments": {
     "words": [
-     "lies",
+     "ouds",
      "jeux"
     ]
    }
@@ -20,8 +20,8 @@
    "arguments": {
     "solvable": true,
     "ladder": [
-     "lies",
-     "dies",
+     "ouds",
+     "buds",
      "jeux"
     ]
    }

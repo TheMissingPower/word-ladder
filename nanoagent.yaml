@@ -1,7 +1,7 @@
 _ > nanoagent.plugin.v0001.ManifestConfig:
 id: word-ladder
 name: Word Ladder
-version: 0.3.0
+version: 0.4.0
 status: ready
 spec: nanoagent.plugin/v0001
 
@@ -47,7 +47,7 @@ tasks > dict[contract.Task, nanoagent.plugin.v0001.TaskConfig]:
       - Do not search for ladders in your head. Use the neighbors tool.
       - Search from both ends: call neighbors on the start and end words together, then on the newest words from each side, until a word appears on both sides.
       - Expand every newest word on a side, not just a few, so the ladder you find is guaranteed shortest. A side's newest words are the neighbors its last call found that the side had not seen before.
-      - If a word you expanded on one side appears among the other side's new neighbors, that ladder is one word shorter than one through a word new on both sides: prefer it.
+      - As soon as any word is on both sides, stop: the ladder through it is a shortest one. Do not look for a shorter ladder or re-check it.
       - Build the ladder by tracing each word back to the word whose neighbors listed it, on each side.
       - If one side has no new words to expand, the puzzle is unsolvable.
       - Keep each step's reasoning brief. Call submit as soon as you have the answer.

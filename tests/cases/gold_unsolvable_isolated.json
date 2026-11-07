@@ -2,7 +2,7 @@
  "note": "The end word has no neighbors: the end side runs out in the first call.",
  "task": "solve-ladder",
  "arguments": {
-  "start": "lies",
+  "start": "ouds",
   "end": "jeux"
  },
  "steps": [
@@ -10,7 +10,7 @@
    "tool": "neighbors",
    "arguments": {
     "words": [
-     "lies",
+     "ouds",
      "jeux"
     ]
    }
